@@ -19,13 +19,13 @@ Tutor Bot is a personal AI study workspace.
 Stack:
 - Backend API: Flask (Python), Flask-JWT-Extended
 - Database: Neon PostgreSQL + SQLAlchemy + Alembic (Flask-Migrate)
-- Frontend: Streamlit multi-page app
+- Frontend: Vanilla HTML/CSS/JS multi-page app
 - LLM integration: external wrapper service (`WRAPPER_BASE_URL`) with OpenAI-compatible routes
 - Vector search: `pgvector` in Neon
 
 ---
 
-## 2) Current Implementation Snapshot (as of 2026-02-23)
+## 2) Current Implementation Snapshot (as of 2026-02-24)
 
 Completed:
 - Phase 1: scaffold
@@ -41,9 +41,10 @@ Implemented backend:
 - migration: `backend/migrations/versions/b0536757bfa6_create_users_table.py`
 
 Implemented frontend:
-- `frontend/pages/0_Login.py`
-- `frontend/Home.py`
-- `frontend/components/api_client.py` (centralized frontend HTTP client)
+- `frontend/index.html` (landing page)
+- `frontend/pages/login.html`
+- `frontend/pages/signup.html`
+- `frontend/components/api_client.js` (centralized frontend HTTP client)
 
 Pending (stub/empty modules):
 - Phase 3: documents + RAG chat
@@ -69,7 +70,7 @@ Before writing code, do all of the following:
 
 ## 4) Architecture Rules (Do Not Break)
 
-1. Frontend must call backend only via `frontend/components/api_client.py`.
+1. Frontend must call backend only via `frontend/components/api_client.js`.
 2. Backend API routes must not call providers directly.
 3. All LLM calls must go through `backend/app/services/wrapper/client.py`.
 4. All DB access must use SQLAlchemy models in `backend/app/db/models/`.
@@ -112,6 +113,7 @@ Required backend vars:
 - `JWT_SECRET_KEY`
 - `WRAPPER_BASE_URL`
 - `WRAPPER_KEY`
+- `CORS_ALLOWED_ORIGINS` (for browser frontend API calls)
 
 Required frontend var:
 - `API_BASE_URL` (default `http://localhost:5000`)
@@ -143,9 +145,11 @@ Backend models:
 - `backend/app/db/models/`
 
 Frontend:
-- `frontend/components/api_client.py`
+- `frontend/components/api_client.js`
+- `frontend/components/session.js`
+- `frontend/index.html`
 - `frontend/pages/*`
-- `frontend/Home.py`
+- `frontend/assets/*`
 
 ---
 
@@ -157,7 +161,7 @@ A task is not complete until all are true:
 2. Existing auth flow still works.
 3. New/changed endpoints run correctly.
 4. New migrations apply cleanly (if schema changed).
-5. Frontend still uses only `components/api_client.py` for HTTP.
+5. Frontend still uses only `components/api_client.js` for HTTP.
 6. A new docs memory file is added in `docs/`.
 7. Docs memory file includes:
    - task summary
@@ -181,7 +185,7 @@ flask run
 2. Frontend starts:
 ```bash
 cd frontend
-streamlit run Home.py
+python -m http.server 5500
 ```
 
 3. Auth regression checks:
@@ -216,7 +220,7 @@ Model routing policy (target):
 
 ## 11) Common Mistakes To Avoid
 
-- Do not bypass `api_client.py` from Streamlit pages.
+- Do not bypass `api_client.js` from frontend pages/scripts.
 - Do not call providers directly from Flask routes.
 - Do not skip user scoping (`user_id`) in queries.
 - Do not delete stub pages/modules for future phases.
@@ -235,7 +239,7 @@ Implement only Step <N>.
 Constraints:
 - preserve auth behavior
 - use SQLAlchemy models and Flask-Migrate for schema changes
-- frontend HTTP only via frontend/components/api_client.py
+- frontend HTTP only via frontend/components/api_client.js
 - backend LLM calls only via backend/app/services/wrapper/client.py
 After completion:
 - run relevant checks

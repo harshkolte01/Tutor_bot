@@ -19,6 +19,12 @@ class Config:
     WRAPPER_BASE_URL = os.getenv("WRAPPER_BASE_URL", "")
     WRAPPER_KEY = os.getenv("WRAPPER_KEY", "")
 
+    # Browser frontend origins allowed to call backend APIs
+    CORS_ALLOWED_ORIGINS = os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000,http://127.0.0.1:3000",
+    )
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

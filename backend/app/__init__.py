@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from app.config import config_map
 from app.extensions import db, migrate, jwt
 import os
@@ -14,6 +14,30 @@ def create_app(env: str = None) -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+
+    allowed_origins = {
+        item.strip()
+        for item in app.config.get("CORS_ALLOWED_ORIGINS", "").split(",")
+        if item.strip()
+    }
+
+    @app.after_request
+    def add_cors_headers(response):
+        origin = request.headers.get("Origin")
+        if not origin:
+            return response
+
+        if "*" in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+        elif origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+        else:
+            return response
+
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        return response
 
     with app.app_context():
         # Import models so Flask-Migrate can detect them

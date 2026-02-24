@@ -1,6 +1,6 @@
 # Tutor Bot - Master Implementation Plan (Agent-by-Agent)
 
-Last updated: 2026-02-23
+Last updated: 2026-02-24
 Source reference: `t.txt` + current repository state
 
 ## 1. Purpose
@@ -14,12 +14,14 @@ Each step has:
 - API and frontend work
 - definition of done
 
-## 2. Current Baseline (as of 2026-02-23)
+## 2. Current Baseline (as of 2026-02-24)
 
 Already implemented in repo:
 - Phase 1 scaffold: done
 - Phase 2 auth + user model + JWT: done
 - Auth endpoints working: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh`, `/api/auth/me`
+- Frontend migrated from Streamlit to vanilla HTML/CSS/JS (landing + login + signup)
+- Frontend API contract centralized in `frontend/components/api_client.js`
 
 Pending:
 - Phase 3 documents + RAG chat
@@ -29,7 +31,7 @@ Pending:
 
 ## 3. Non-Negotiable Rules
 
-1. Frontend must call only Flask backend (`frontend/components/api_client.py`).
+1. Frontend must call only Flask backend (`frontend/components/api_client.js`).
 2. Backend API must call LLM only through `backend/app/services/wrapper/client.py`.
 3. DB access must use SQLAlchemy models (raw SQL only in migrations).
 4. JWT identity must be `user.id`.
@@ -77,7 +79,7 @@ cd backend
 flask run
 
 cd ../frontend
-streamlit run Home.py
+python -m http.server 5500
 ```
 
 ### Definition of done
@@ -89,7 +91,7 @@ streamlit run Home.py
 
 ## Step 1 - Dependency Manifests and Dev Setup
 
-Status in repo: partially missing (requirements files absent)
+Status in repo: partially missing (backend requirements file absent)
 Estimated time: 1-2 hours
 Owner: Backend + frontend setup agent
 Depends on: Step 0
@@ -103,11 +105,12 @@ Update `.env.example` and local `.env` as needed:
 - `WRAPPER_BASE_URL`
 - `WRAPPER_KEY`
 - `API_BASE_URL`
+- `CORS_ALLOWED_ORIGINS`
 
 ### Files to create/update
 - `backend/requirements.txt` (create)
-- `frontend/requirements.txt` (create)
 - `README.md` run instructions (update)
+- `frontend/README.md` (verify run/config instructions stay current)
 
 ### Package targets
 Backend minimum:
@@ -121,9 +124,9 @@ Backend minimum:
 - pgvector (python package if needed for ORM type mapping)
 
 Frontend minimum:
-- streamlit
-- requests
-- python-dotenv
+- static files only (`frontend/` HTML/CSS/JS)
+- no required Python package manifest for runtime
+- local static serving via `python -m http.server` (or equivalent static server)
 
 ### Definition of done
 - Fresh environment install works.
@@ -400,15 +403,17 @@ Run migration before coding route logic:
 
 ## Step 9 - Frontend Documents and Chat Pages (Phase 3 UI)
 
-Status in repo: pending (stubs exist)
+Status in repo: pending (frontend base migrated; Phase 3 pages not built yet)
 Estimated time: 6-8 hours
-Owner: Frontend Streamlit agent
+Owner: Frontend web agent (HTML/CSS/JS)
 Depends on: Steps 6 and 8
 
 ### Files to update
-- `frontend/components/api_client.py` (add new endpoints)
-- `frontend/pages/1_Chat_Tutor.py`
-- `frontend/pages/2_Upload_Documents.py`
+- `frontend/components/api_client.js` (add new endpoints)
+- `frontend/pages/chat.html`
+- `frontend/pages/documents.html`
+- `frontend/assets/js/chat.js`
+- `frontend/assets/js/documents.js`
 
 ### UI tasks
 Upload Documents page:
@@ -530,15 +535,17 @@ Depends on: Step 11
 
 ## Step 13 - Frontend Quiz Pages (Create + Take)
 
-Status in repo: pending (stubs exist)
+Status in repo: pending (frontend base migrated; quiz pages not built yet)
 Estimated time: 6-8 hours
-Owner: Frontend Streamlit agent
+Owner: Frontend web agent (HTML/CSS/JS)
 Depends on: Steps 11 and 12
 
 ### Files
-- `frontend/components/api_client.py`
-- `frontend/pages/3_Create_Quiz.py`
-- `frontend/pages/4_Take_Quiz.py`
+- `frontend/components/api_client.js`
+- `frontend/pages/create-quiz.html`
+- `frontend/pages/take-quiz.html`
+- `frontend/assets/js/create-quiz.js`
+- `frontend/assets/js/take-quiz.js`
 
 ### Create Quiz page
 - form: topic, question count, marks, difficulty, time limit
@@ -589,14 +596,15 @@ In `backend/app/api/analytics.py`:
 
 ## Step 15 - Frontend Analytics Page
 
-Status in repo: pending (stub exists)
+Status in repo: pending (frontend base migrated; analytics page not built yet)
 Estimated time: 3-5 hours
-Owner: Frontend Streamlit agent
+Owner: Frontend web agent (HTML/CSS/JS)
 Depends on: Step 14
 
 ### Files
-- `frontend/components/api_client.py`
-- `frontend/pages/5_Analytics.py`
+- `frontend/components/api_client.js`
+- `frontend/pages/analytics.html`
+- `frontend/assets/js/analytics.js`
 
 ### UI sections
 1. high-level cards (docs, chats, quizzes, average score)
@@ -676,7 +684,7 @@ Constraints:
 - follow architecture rules in AGENTS.MD
 - do not break existing auth flow
 - use SQLAlchemy models and Flask-Migrate for DB changes
-- frontend must call backend only via frontend/components/api_client.py
+- frontend must call backend only via frontend/components/api_client.js
 After completion:
 - run relevant checks
 - create docs/YYYY-MM-DD_step<N>_<short_desc>.md with full summary

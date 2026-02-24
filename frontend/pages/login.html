@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In | Tutor Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/auth.css">
+  <script src="../config.js"></script>
+</head>
+<body class="auth-page">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../index.html">Tutor Bot</a>
+      <div class="topbar-actions">
+        <a class="button button-ghost" href="./signup.html">Create Account</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-layout container">
+    <section class="auth-context">
+      <p class="eyebrow">Welcome Back</p>
+      <h1>Pick up where you left off.</h1>
+      <p>
+        Sign in to access your workspace and continue your study flow.
+      </p>
+      <ul class="auth-bullets">
+        <li>Secure JWT-based session</li>
+        <li>Private, user-scoped data access</li>
+        <li>Ready for upcoming tutor features</li>
+      </ul>
+    </section>
+
+    <section class="auth-card-wrap">
+      <article class="auth-card">
+        <h2>Sign In</h2>
+        <p class="muted">Use your registered email and password.</p>
+        <form data-auth-form data-mode="login" novalidate>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" name="password" placeholder="Your password" autocomplete="current-password" required>
+          </label>
+          <button class="button button-solid button-full" type="submit" data-submit-btn>Sign In</button>
+        </form>
+        <p class="form-message" data-form-message aria-live="polite"></p>
+        <p class="switch-text">No account yet? <a href="./signup.html">Create one</a></p>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="../assets/js/auth.js"></script>
+</body>
+</html>
