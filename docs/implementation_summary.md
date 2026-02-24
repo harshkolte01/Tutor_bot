@@ -1,220 +1,131 @@
-# Tutor Bot — Implementation Summary
+# Tutor Bot - Implementation Summary
 
-**Last updated:** 2026-02-23  
-**Phase completed:** Phase 2 — Auth + User Scoping
+Last updated: 2026-02-23
+Current completed phase: Phase 2 (Auth + User model + JWT)
 
----
+## Scope Of This Summary
 
-## Project Overview
+This file reflects the code currently present in the repository (not just planned scaffold files).
 
-Tutor Bot is a personal AI study workspace with:
-- A **Flask REST API** backend (with JWT auth + PostgreSQL via Neon)
-- A **Streamlit** multi-page frontend
-- Future phases: RAG (document chat), quizzes, analytics
+## Current Status By Phase
 
----
+| Phase | Goal | Status |
+|---|---|---|
+| 1 | Project scaffold | Done |
+| 2 | Auth + user model + JWT | Done |
+| 3 | Documents + RAG chat | Not implemented (stub files only) |
+| 4 | Quiz generation/taking/grading | Not implemented (stub files only) |
+| 5 | Analytics | Not implemented (stub files only) |
+| 6 | Docker/production config | Not implemented |
 
-## Current File Structure
+## Backend (Implemented)
 
-```
-Tutor_bot/
-├── .env                         ← live secrets (DB URL, JWT key, etc.)
-├── .env.example                 ← template for new devs
-├── docker-compose.yml           ← (empty, Phase 6)
-├── README.md
-├── docs/
-│   ├── structure_scaffold.md    ← Phase 1 scaffold notes
-│   └── implementation_summary.md ← this file
-│
-├── backend/
-│   ├── run.py                   ← Flask entry point
-│   ├── requirements.txt
-│   ├── migrations/              ← Alembic (Flask-Migrate) auto-generated
-│   │   └── versions/
-│   │       └── b0536757bfa6_create_users_table.py
-│   └── app/
-│       ├── __init__.py          ← create_app() factory
-│       ├── config.py            ← Config / DevelopmentConfig / ProductionConfig
-│       ├── extensions.py        ← db, migrate, jwt singletons
-│       ├── api/
-│       │   ├── __init__.py
-│       │   ├── auth.py          ← /api/auth/* endpoints  ✅ IMPLEMENTED
-│       │   ├── chat.py          ← (Phase 3)
-│       │   ├── documents.py     ← (Phase 3)
-│       │   ├── quizzes.py       ← (Phase 4)
-│       │   └── analytics.py    ← (Phase 5)
-│       ├── services/
-│       │   ├── wrapper/         ← LLM wrapper client (Phase 3)
-│       │   ├── rag/             ← RAG pipeline (Phase 3)
-│       │   ├── router/          ← query router (Phase 3)
-│       │   ├── quiz/            ← quiz engine (Phase 4)
-│       │   └── analytics/       ← events + metrics (Phase 5)
-│       └── db/
-│           ├── models/
-│           │   ├── __init__.py
-│           │   └── user.py      ← User model  ✅ LIVE IN DB
-│           └── migrations/      ← (placeholder, actual in backend/migrations/)
-│
-└── frontend/
-    ├── requirements.txt
-    ├── Home.py                  ← auth-gated dashboard  ✅ IMPLEMENTED
-    ├── components/
-    │   ├── __init__.py
-    │   └── api_client.py        ← all HTTP calls to Flask  ✅ IMPLEMENTED
-    └── pages/
-        ├── 0_Login.py           ← Login + Register UI     ✅ IMPLEMENTED
-        ├── 1_Chat_Tutor.py      ← auth guard stub (Phase 3)
-        ├── 2_Upload_Documents.py← auth guard stub (Phase 3)
-        ├── 3_Create_Quiz.py     ← auth guard stub (Phase 4)
-        ├── 4_Take_Quiz.py       ← auth guard stub (Phase 4)
-        └── 5_Analytics.py       ← auth guard stub (Phase 5)
-```
+### App Factory And Extensions
 
----
+- `backend/app/__init__.py`
+  - Loads config from `app.config.config_map`.
+  - Initializes `db`, `migrate`, and `jwt`.
+  - Imports models for migration detection.
+  - Registers only `auth_bp`.
+- `backend/app/extensions.py`
+  - Defines singleton extension objects: SQLAlchemy, Migrate, JWTManager.
+- `backend/run.py`
+  - Starts Flask app on `0.0.0.0:5000`.
 
-## Phase 1 — Scaffold (Done)
+### Auth API
 
-- Created all empty files matching the project spec
-- No code, just folder + file structure
+Blueprint: `/api/auth` in `backend/app/api/auth.py`.
 
----
+Implemented endpoints:
 
-## Phase 2 — Auth + User Scoping (Done)
+| Method | Path | Behavior |
+|---|---|---|
+| POST | `/api/auth/register` | Creates user, returns access+refresh JWT and user payload |
+| POST | `/api/auth/login` | Verifies credentials, returns access+refresh JWT and user payload |
+| POST | `/api/auth/refresh` | Requires refresh token, returns new access token |
+| GET | `/api/auth/me` | Requires access token, returns current user payload |
 
-### Database (`users` table — live on Neon PostgreSQL)
+Validation and auth behavior implemented:
 
-| Column          | Type         | Constraints              |
-|-----------------|--------------|--------------------------|
-| `id`            | VARCHAR(36)  | PK, UUID default         |
-| `email`         | VARCHAR(255) | UNIQUE, NOT NULL         |
-| `username`      | VARCHAR(100) | UNIQUE, nullable         |
-| `password_hash` | TEXT         | NOT NULL                 |
-| `created_at`    | TIMESTAMP    | NOT NULL, default now()  |
-| `is_active`     | BOOLEAN      | NOT NULL, default true   |
+- Email/password required for register/login.
+- Password minimum length 8 on register.
+- Duplicate email/username checks.
+- Disabled accounts blocked on login.
+- JWT identity is the user ID string.
+- Password hashing via Werkzeug helpers.
 
-Migration file: `backend/migrations/versions/b0536757bfa6_create_users_table.py`
+### Database Model And Migration
 
----
+- `backend/app/db/models/user.py` defines `users` model:
+  - `id` (string UUID primary key)
+  - `email` (unique, required)
+  - `username` (unique, nullable)
+  - `password_hash` (required)
+  - `created_at` (timezone-aware datetime, required)
+  - `is_active` (boolean, required)
+- `backend/migrations/versions/b0536757bfa6_create_users_table.py` creates the `users` table.
 
-### Backend API Endpoints
+## Backend (Not Yet Implemented)
 
-Base path: `http://localhost:5000/api/auth`
+These files currently exist but are empty (stub placeholders):
 
-| Method | Path       | Auth required | Description                          |
-|--------|------------|---------------|--------------------------------------|
-| POST   | /register  | No            | Create account, returns JWT pair     |
-| POST   | /login     | No            | Verify credentials, returns JWT pair |
-| POST   | /refresh   | Refresh token | Issue new access token               |
-| GET    | /me        | Access token  | Return current user profile          |
+- API: `backend/app/api/chat.py`, `backend/app/api/documents.py`, `backend/app/api/quizzes.py`, `backend/app/api/analytics.py`
+- Wrapper services: `backend/app/services/wrapper/client.py`, `backend/app/services/wrapper/retry.py`
+- RAG services: `backend/app/services/rag/ingestion.py`, `backend/app/services/rag/chunking.py`, `backend/app/services/rag/retrieval.py`, `backend/app/services/rag/answering.py`
+- Router services: `backend/app/services/router/heuristics.py`, `backend/app/services/router/classifier.py`
+- Quiz services: `backend/app/services/quiz/spec_parser.py`, `backend/app/services/quiz/generator.py`, `backend/app/services/quiz/validator.py`, `backend/app/services/quiz/grading.py`, `backend/app/services/quiz/summarizer.py`
+- Analytics services: `backend/app/services/analytics/events.py`, `backend/app/services/analytics/metrics.py`
 
-**Response shape** (register / login):
-```json
-{
-  "access_token":  "<JWT>",
-  "refresh_token": "<JWT>",
-  "user": {
-    "id": "<uuid>",
-    "email": "user@example.com",
-    "username": "study_hero",
-    "created_at": "2026-02-23T...",
-    "is_active": true
-  }
-}
-```
+## Frontend (Implemented)
 
-**JWT identity:** `user.id` (UUID string) — every protected route calls `get_jwt_identity()` to scope queries to that user.
+### Working Auth Flow
 
-**Password hashing:** `werkzeug.security.generate_password_hash` / `check_password_hash`
+- `frontend/components/api_client.py`
+  - Centralized HTTP client for all frontend->backend calls.
+  - Implements `register`, `login`, `refresh_token`, `get_me`.
+  - Includes generic authenticated helpers: `authed_get`, `authed_post`, `authed_delete`.
+- `frontend/pages/0_Login.py`
+  - Login and register forms.
+  - Stores auth state in `st.session_state`:
+    - `access_token`
+    - `refresh_token`
+    - `user`
+- `frontend/Home.py`
+  - Requires auth token before showing dashboard.
+  - Provides sign-out behavior by clearing session auth keys.
 
----
+### Stub Pages With Auth Guard
 
-### Backend Stack
+- `frontend/pages/1_Chat_Tutor.py`
+- `frontend/pages/2_Upload_Documents.py`
+- `frontend/pages/3_Create_Quiz.py`
+- `frontend/pages/4_Take_Quiz.py`
+- `frontend/pages/5_Analytics.py`
 
-| Package             | Purpose                          |
-|---------------------|----------------------------------|
-| Flask               | Web framework                    |
-| Flask-SQLAlchemy    | ORM                              |
-| Flask-Migrate       | Alembic migrations wrapper       |
-| Flask-JWT-Extended  | JWT issue / verify               |
-| psycopg2-binary     | PostgreSQL driver                |
-| Werkzeug            | Password hashing                 |
-| python-dotenv       | Load `.env`                      |
-| pgvector            | Vector column type (Phase 3)     |
+Each page checks for `access_token` and shows placeholder text for future phase implementation.
 
----
+## Config And Environment
 
-### Frontend
+Defined in `.env.example`:
 
-| File                         | Role                                                      |
-|------------------------------|-----------------------------------------------------------|
-| `components/api_client.py`   | Single HTTP client; attaches `Authorization: Bearer` header to every authed call |
-| `pages/0_Login.py`           | Sign In + Create Account tabs; stores tokens in `st.session_state` |
-| `Home.py`                    | Auth guard → redirects to 0_Login if no token; shows dashboard cards |
-| All other pages              | Auth guard → same redirect; placeholder content           |
+- `DATABASE_URL`
+- `FLASK_ENV`
+- `SECRET_KEY`
+- `JWT_SECRET_KEY`
+- `WRAPPER_BASE_URL`
+- `WRAPPER_KEY`
+- `API_BASE_URL`
 
-**Token storage:** `st.session_state["access_token"]`, `st.session_state["refresh_token"]`, `st.session_state["user"]`
+Backend config defaults are in `backend/app/config.py`.
 
-**UI theme (Calm Tutor):**
+## Repository Notes (Current Reality)
 
-| Token          | Value     |
-|----------------|-----------|
-| Background     | `#0B1220` |
-| Surface / cards| `#111B2E` |
-| Primary        | `#6D5EF7` |
-| Success        | `#22C55E` |
-| Text           | `#E6EAF2` |
-| Muted text     | `#A7B0C0` |
-| Border         | `#22304A` |
+- `README.md` currently exists but is empty.
+- `backend/requirements.txt` and `frontend/requirements.txt` are not present.
+- `docker-compose.yml` is not present.
 
----
+## Next Work Items
 
-### Environment Variables
-
-| Variable        | Used by       | Description                        |
-|-----------------|---------------|------------------------------------|
-| `DATABASE_URL`  | Backend       | Neon PostgreSQL connection string  |
-| `SECRET_KEY`    | Backend       | Flask secret                       |
-| `JWT_SECRET_KEY`| Backend       | JWT signing key                    |
-| `WRAPPER_BASE_URL` | Backend    | LLM wrapper base URL (Phase 3)     |
-| `WRAPPER_KEY`   | Backend       | LLM wrapper API key (Phase 3)      |
-| `API_BASE_URL`  | Frontend      | `http://localhost:5000` by default |
-
----
-
-### How to Run
-
-```bash
-# Backend
-cd backend
-flask run              # starts on :5000
-
-# Frontend (separate terminal)
-cd frontend
-streamlit run Home.py  # starts on :8501
-```
-
----
-
-## Verification Results (Phase 2)
-
-All checks executed against live Neon DB + local Flask server:
-
-| Check                        | Status | HTTP code |
-|------------------------------|--------|-----------|
-| POST /register               | PASS   | 201       |
-| POST /login (correct creds)  | PASS   | 200       |
-| GET  /me (valid token)       | PASS   | 200       |
-| GET  /me (bad token)         | PASS   | 422       |
-| POST /refresh                | PASS   | 200       |
-| POST /login (wrong password) | PASS   | 401       |
-
----
-
-## Next Phases
-
-| Phase | Goal                                               |
-|-------|----------------------------------------------------|
-| 3     | Documents + RAG chat (upload, chunk, vector search, answer) |
-| 4     | Quiz generation, taking, grading                   |
-| 5     | Analytics — usage metrics and learning progress    |
-| 6     | Docker Compose, production config, HTTPS           |
+1. Add dependency manifests (`backend/requirements.txt`, `frontend/requirements.txt`).
+2. Implement Phase 3 backend routes/services and connect frontend chat/document pages.
+3. Expand docs with run/test commands once requirements are defined.

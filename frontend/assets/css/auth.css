@@ -1,0 +1,122 @@
+.auth-page {
+  background:
+    radial-gradient(1000px 450px at -10% -10%, rgba(202, 81, 36, 0.2), transparent 58%),
+    radial-gradient(800px 450px at 105% 10%, rgba(11, 123, 110, 0.2), transparent 60%),
+    var(--bg-soft);
+}
+
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 30px;
+  padding-top: 62px;
+  padding-bottom: 36px;
+}
+
+.auth-context h1 {
+  margin: 12px 0 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  line-height: 1.05;
+  max-width: 14ch;
+}
+
+.auth-context p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.52;
+  max-width: 50ch;
+}
+
+.auth-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.auth-bullets li {
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(31, 45, 58, 0.26);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.auth-card-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  background: var(--surface);
+  border: 1px solid rgba(31, 45, 58, 0.1);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px 24px 18px;
+}
+
+.auth-card h2 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.45rem;
+}
+
+.auth-card > .muted {
+  margin: 8px 0 0;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.field span {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.68rem 0.74rem;
+  font: inherit;
+  background: #fff;
+}
+
+.field input:focus {
+  outline: 2px solid rgba(11, 123, 110, 0.32);
+  border-color: var(--brand);
+}
+
+[data-submit-btn] {
+  margin-top: 16px;
+}
+
+.switch-text {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.93rem;
+}
+
+.switch-text a {
+  color: var(--brand-deep);
+  font-weight: 700;
+}
+
+@media (max-width: 940px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 18px;
+    padding-top: 40px;
+  }
+
+  .auth-context h1 {
+    max-width: 100%;
+  }
+}

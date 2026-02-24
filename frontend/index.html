@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tutor Bot | Personal Study Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/base.css">
+  <link rel="stylesheet" href="./assets/css/landing.css">
+  <script src="./config.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="./index.html">Tutor Bot</a>
+      <div class="topbar-actions">
+        <span class="user-chip" data-user-slot hidden></span>
+        <a class="button button-ghost" href="./pages/login.html" data-guest-action="signin">Sign In</a>
+        <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Get Started</a>
+        <button class="button button-ghost" type="button" data-signout hidden>Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div class="hero-copy-block">
+        <p class="eyebrow" data-reveal>Personal AI Study Workspace</p>
+        <h1 data-reveal>Learn faster with your own focused tutor.</h1>
+        <p class="hero-copy" data-reveal>
+          Upload notes, ask direct questions, and turn weak topics into targeted practice. Keep your learning private and structured.
+        </p>
+        <div class="hero-actions" data-reveal>
+          <a class="button button-solid" href="./pages/signup.html">Create Account</a>
+          <a class="button button-ghost" href="./pages/login.html">I Already Have an Account</a>
+        </div>
+      </div>
+      <aside class="hero-panel" data-reveal>
+        <h2>Built For Continuous Revision</h2>
+        <ul>
+          <li>Auth-backed private workspace</li>
+          <li>Backend API with JWT security</li>
+          <li>Ready for upcoming RAG, quiz, and analytics phases</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="features container">
+      <article class="feature-card" data-reveal>
+        <h3>Chat Tutor</h3>
+        <p>Ask concept questions and get grounded explanations from your own study material.</p>
+      </article>
+      <article class="feature-card" data-reveal>
+        <h3>Document Grounding</h3>
+        <p>Ingest PDFs and notes so every answer can stay anchored to what you uploaded.</p>
+      </article>
+      <article class="feature-card" data-reveal>
+        <h3>Quiz Workflow</h3>
+        <p>Create focused quizzes from your weak areas and track improvement over time.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer container">
+    <p>Backend API: <code data-api-base-url></code></p>
+  </footer>
+
+  <script type="module" src="./assets/js/landing.js"></script>
+</body>
+</html>
