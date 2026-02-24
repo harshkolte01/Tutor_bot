@@ -9,7 +9,7 @@ function applyAuthState() {
 
   if (session?.user) {
     const displayName = session.user.username || session.user.email;
-    userSlot.textContent = `Signed in: ${displayName}`;
+    userSlot.textContent = displayName;
     userSlot.hidden = false;
     guestActions.forEach((item) => {
       item.hidden = true;

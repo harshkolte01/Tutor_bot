@@ -45,6 +45,8 @@ def create_app(env: str = None) -> Flask:
 
         # Register blueprints
         from app.api.auth import auth_bp
+        from app.api.dev import dev_bp
         app.register_blueprint(auth_bp)
+        app.register_blueprint(dev_bp)
 
     return app
