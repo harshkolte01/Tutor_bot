@@ -41,7 +41,7 @@ def create_app(env: str = None) -> Flask:
 
     with app.app_context():
         # Import models so Flask-Migrate can detect them
-        from app.db.models import User  # noqa: F401
+        from app.db.models import User, Document, DocumentIngestion, Chunk  # noqa: F401
 
         # Register blueprints
         from app.api.auth import auth_bp
