@@ -25,6 +25,9 @@ class Config:
     WRAPPER_DEFAULT_MODEL = os.getenv("WRAPPER_DEFAULT_MODEL", "routeway/glm-4.5-air:free")
     WRAPPER_EMBEDDING_MODEL = os.getenv("WRAPPER_EMBEDDING_MODEL", "gemini/gemini-embedding-001")
 
+    # File uploads
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "")  # default: instance/uploads
+
     # Browser frontend origins allowed to call backend APIs
     CORS_ALLOWED_ORIGINS = os.getenv(
         "CORS_ALLOWED_ORIGINS",
