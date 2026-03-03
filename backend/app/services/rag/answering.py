@@ -44,10 +44,17 @@ _SYSTEM_TEMPLATE = """\
 You are a knowledgeable and helpful AI tutor. Answer the student's question \
 accurately and clearly.
 
-When relevant context is provided below, base your answer on it and cite \
-sources using [Source N] notation where N is the source number. If the \
-context does not contain enough information to answer fully, supplement with \
-your general knowledge and say so.
+First, carefully read the context sources provided below and decide whether \
+they contain information relevant to the student's question.
+
+IF the context contains relevant information:
+- Answer the question using the context.
+- Cite sources using [Source N] notation.
+
+IF the context does NOT contain relevant information about the question:
+- Reply with ONLY this exact line and nothing else: [NO_CONTEXT]
+- Do NOT attempt to answer from general knowledge.
+- Do NOT provide any explanation.
 
 Context from the student's uploaded documents:
 {context_block}
@@ -55,7 +62,8 @@ Context from the student's uploaded documents:
 
 _NO_CONTEXT_SYSTEM = """\
 You are a knowledgeable and helpful AI tutor. Answer the student's question \
-accurately and clearly. No document context is available for this question.
+accurately and clearly. No document context is available; answer from your \
+general knowledge.
 """
 
 
@@ -123,6 +131,7 @@ def generate_answer(
     history: List[dict] | None = None,
     top_k: int = 5,
     document_ids: List[str] | None = None,
+    use_general_knowledge: bool = False,
 ) -> dict:
     """
     Generate a RAG-augmented answer for *question*.
@@ -143,34 +152,44 @@ def generate_answer(
     document_ids : list[str] | None
         When provided, restrict RAG search to these document IDs only.
         ``None`` searches all of the user's documents (default behaviour).
+    use_general_knowledge : bool
+        When True, skip document retrieval entirely and answer from the
+        model's general training knowledge.  Used when the user explicitly
+        opts in after an out-of-context response.
 
     Returns
     -------
     dict
-        answer  : str
-        model   : str (model actually used)
-        sources : list[dict] (retrieval results, possibly empty)
+        answer          : str
+        model           : str (model actually used)
+        sources         : list[dict] (retrieval results, possibly empty)
+        out_of_context  : bool — True when the retrieved docs don't cover
+                          the question and the user must be offered a choice.
     """
     history = history or []
+    out_of_context = False
 
-    # ── 1. Retrieve relevant chunks ──────────────────────────────────────────
-    try:
-        sources = retrieve_chunks(
-            query_text=question,
-            user_id=user_id,
-            top_k=top_k,
-            document_ids=document_ids if document_ids else None,
-        )
-    except WrapperError as exc:
-        log.warning("answering: retrieval failed, proceeding without context: %s", exc)
+    # ── 1. Retrieve relevant chunks (skipped when user chose general knowledge) ──
+    if use_general_knowledge:
         sources = []
+    else:
+        try:
+            sources = retrieve_chunks(
+                query_text=question,
+                user_id=user_id,
+                top_k=top_k,
+                document_ids=document_ids if document_ids else None,
+            )
+        except WrapperError as exc:
+            log.warning("answering: retrieval failed, proceeding without context: %s", exc)
+            sources = []
 
     # ── 2. Build prompt ──────────────────────────────────────────────────────
-    if sources:
+    if use_general_knowledge or not sources:
+        system_content = _NO_CONTEXT_SYSTEM
+    else:
         context_block = _build_context_block(sources)
         system_content = _SYSTEM_TEMPLATE.format(context_block=context_block)
-    else:
-        system_content = _NO_CONTEXT_SYSTEM
 
     messages = [{"role": "system", "content": system_content}]
 
@@ -185,8 +204,16 @@ def generate_answer(
     # ── 3. Generate answer ───────────────────────────────────────────────────
     answer_text, model_used = _chat_with_fallback(model=model, messages=messages)
 
+    # ── 4. Detect out-of-context sentinel ────────────────────────────────────
+    if not use_general_knowledge and answer_text.strip().startswith("[NO_CONTEXT]"):
+        out_of_context = True
+        answer_text = "The provided documents do not contain information about this topic."
+        sources = []  # no useful sources to cite
+        log.info("answering: out-of-context detected for question=%r", question[:80])
+
     return {
-        "answer":  answer_text,
-        "model":   model_used,
-        "sources": sources,
+        "answer":         answer_text,
+        "model":          model_used,
+        "sources":        sources,
+        "out_of_context": out_of_context,
     }

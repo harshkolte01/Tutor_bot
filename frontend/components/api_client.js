@@ -311,11 +311,13 @@ export function getChatMessages(accessToken, chatId) {
 }
 
 /** POST /api/chat/sessions/<id>/messages — send user message, receive AI answer */
-export function sendChatMessage(accessToken, chatId, content) {
+export function sendChatMessage(accessToken, chatId, content, useGeneralKnowledge = false) {
+  const payload = { content };
+  if (useGeneralKnowledge) payload.use_general_knowledge = true;
   return request(`/api/chat/sessions/${chatId}/messages`, {
     method: "POST",
     token: accessToken,
-    payload: { content },
+    payload,
     timeoutMs: 120000,
   });
 }

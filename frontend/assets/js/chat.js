@@ -192,8 +192,12 @@ async function submitMessage() {
     const result = await sendChatMessage(getToken(), activeChatId, content);
     typingIndicator.hidden = true;
 
-    // Render assistant message
-    appendMessage(result.assistant_message, result.router);
+    if (result.out_of_context) {
+      // Document doesn't cover this question — show choice card
+      appendOutOfContextCard(content, result.assistant_message, result.router);
+    } else {
+      appendMessage(result.assistant_message, result.router);
+    }
 
     // Update session title in sidebar (auto-titled after first message)
     const sessResp = await listChatSessions(getToken());
@@ -226,6 +230,56 @@ chatInput.addEventListener("input", () => {
   chatInput.style.height = "auto";
   chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + "px";
 });
+
+// ── Out-of-context card ───────────────────────────────────────────────────────
+
+function appendOutOfContextCard(originalQuestion, msg, router) {
+  // First render the assistant's "not found" message as a normal bubble
+  appendMessage(msg, router);
+
+  // Then attach a choice card beneath it
+  const card = document.createElement("div");
+  card.className = "ooc-card";
+  card.innerHTML = `
+    <p class="ooc-card-prompt">Would you like me to answer from my general knowledge?</p>
+    <div class="ooc-card-actions">
+      <button type="button" class="button button-solid ooc-yes-btn">Yes, use general knowledge</button>
+      <button type="button" class="button button-ghost ooc-no-btn">No, thanks</button>
+    </div>
+  `.trim();
+
+  card.querySelector(".ooc-no-btn").addEventListener("click", () => card.remove());
+
+  card.querySelector(".ooc-yes-btn").addEventListener("click", async () => {
+    card.remove();
+    await sendAsGeneralKnowledge(originalQuestion);
+  });
+
+  chatMessagesEl.appendChild(card);
+  scrollToBottom();
+}
+
+async function sendAsGeneralKnowledge(question) {
+  if (!activeChatId || isSending) return;
+  isSending = true;
+  enableInput(false);
+
+  typingIndicator.hidden = false;
+  scrollToBottom();
+
+  try {
+    const result = await sendChatMessage(getToken(), activeChatId, question, true);
+    typingIndicator.hidden = true;
+    appendMessage(result.assistant_message, result.router);
+  } catch (err) {
+    typingIndicator.hidden = true;
+    appendError(err instanceof APIError ? err.message : "Failed to get general knowledge answer.");
+  } finally {
+    isSending = false;
+    enableInput(true);
+    scrollToBottom();
+  }
+}
 
 // ── Markdown renderer (marked.js loaded via CDN in chat.html) ────────────────
 function renderMarkdown(text) {

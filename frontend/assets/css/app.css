@@ -518,6 +518,35 @@
   -webkit-box-orient: vertical;
 }
 
+/* ── Out-of-context choice card ─────────────────────────────────────────── */
+.ooc-card {
+  align-self: flex-start;
+  max-width: 72%;
+  margin: 4px 0 12px 0;
+  padding: 14px 18px;
+  background: rgba(180, 83, 9, 0.06);
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  border-radius: var(--radius-md);
+  font-size: 0.93rem;
+}
+
+.ooc-card-prompt {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.ooc-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ooc-card-actions .button {
+  font-size: 0.86rem;
+  padding: 0.42rem 1rem;
+}
+
 /* ── Chat input bar ─────────────────────────────────────────────────────── */
 .chat-input-bar {
   border-top: 1px solid rgba(29, 35, 53, 0.1);

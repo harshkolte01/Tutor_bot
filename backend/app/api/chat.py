@@ -167,6 +167,7 @@ def send_message(chat_id: str):
     content = (data.get("content") or "").strip()
     if not content:
         return jsonify({"error": "content is required"}), 400
+    use_general_knowledge = bool(data.get("use_general_knowledge", False))
 
     # ── 1. Save user message ─────────────────────────────────────────────────
     user_msg = ChatMessage(
@@ -211,6 +212,7 @@ def send_message(chat_id: str):
             model=selected_model,
             history=history,
             document_ids=doc_ids_filter,
+            use_general_knowledge=use_general_knowledge,
         )
     except WrapperError as exc:
         log.error("chat answering failed for user=%s: %s", user_id, exc)
@@ -268,6 +270,7 @@ def send_message(chat_id: str):
             "user_message":      _message_to_dict(user_msg),
             "assistant_message": _message_to_dict(assistant_msg, include_sources=True),
             "router":            router_decision,
+            "out_of_context":    result.get("out_of_context", False),
         }
     ), 200
 
