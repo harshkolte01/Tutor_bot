@@ -21,22 +21,45 @@ def create_app(env: str = None) -> Flask:
         if item.strip()
     }
 
+    def _cors_origin(origin: str) -> str | None:
+        if "*" in allowed_origins:
+            return "*"
+        if origin in allowed_origins:
+            return origin
+        return None
+
+    @app.before_request
+    def handle_options_preflight():
+        """Return 200 immediately for all OPTIONS preflight requests with CORS headers."""
+        if request.method != "OPTIONS":
+            return None
+        origin = request.headers.get("Origin", "")
+        allowed = _cors_origin(origin)
+        if not allowed:
+            return None  # not an allowed origin, fall through to 405
+        from flask import make_response
+        resp = make_response("", 200)
+        resp.headers["Access-Control-Allow-Origin"] = allowed
+        resp.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        resp.headers["Access-Control-Max-Age"] = "86400"
+        if allowed != "*":
+            resp.headers["Vary"] = "Origin"
+        return resp
+
     @app.after_request
     def add_cors_headers(response):
-        origin = request.headers.get("Origin")
+        origin = request.headers.get("Origin", "")
         if not origin:
             return response
-
-        if "*" in allowed_origins:
-            response.headers["Access-Control-Allow-Origin"] = "*"
-        elif origin in allowed_origins:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Vary"] = "Origin"
-        else:
+        allowed = _cors_origin(origin)
+        if not allowed:
             return response
-
+        response.headers["Access-Control-Allow-Origin"] = allowed
         response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        if allowed != "*":
+            response.headers["Vary"] = "Origin"
         return response
 
     with app.app_context():
