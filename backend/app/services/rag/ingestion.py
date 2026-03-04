@@ -12,6 +12,7 @@ On failure  → ingestion.status = "failed", ingestion.error_message set.
 
 from __future__ import annotations
 
+import io
 import logging
 from datetime import datetime, timezone
 from typing import List
@@ -31,15 +32,16 @@ EMBEDDING_MODEL = "gemini/gemini-embedding-001"
 
 # ── PDF text extraction ───────────────────────────────────────────────────────
 
-def _extract_pdf_pages(file_path: str) -> List[dict]:
+def _extract_pdf_pages(file_bytes: bytes) -> List[dict]:
     """
     Return list of {"page": int (1-based), "text": str} dicts using pdfplumber.
+    Accepts raw bytes so no disk I/O is required.
     """
     import pdfplumber  # local import: only needed for PDF uploads
 
     pages = []
     try:
-        with pdfplumber.open(file_path) as pdf:
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
             for i, page in enumerate(pdf.pages, start=1):
                 text = page.extract_text() or ""
                 pages.append({"page": i, "text": text})
@@ -121,24 +123,25 @@ def _mark_failed(ingestion: DocumentIngestion, error: str) -> None:
 def ingest_upload(
     document: Document,
     ingestion: DocumentIngestion,
-    file_path: str,
+    file_bytes: bytes,
 ) -> None:
     """
     Full pipeline for an uploaded file (PDF or plain text).
+    Accepts raw bytes — no disk I/O required, works on Vercel and locally.
     Mutates ingestion.status in place.
     """
     try:
         mime = (document.mime_type or "").lower()
+        filename = (document.filename or "").lower()
 
-        if "pdf" in mime or file_path.lower().endswith(".pdf"):
-            pages = _extract_pdf_pages(file_path)
+        if "pdf" in mime or filename.endswith(".pdf"):
+            pages = _extract_pdf_pages(file_bytes)
             if not any(p["text"].strip() for p in pages):
                 raise RuntimeError("PDF appears to contain no extractable text (possibly scanned).")
             chunks = chunk_pages(pages)
         else:
-            # Plain text file
-            with open(file_path, "r", encoding="utf-8", errors="replace") as fh:
-                raw_text = fh.read()
+            # Plain text / markdown
+            raw_text = file_bytes.decode("utf-8", errors="replace")
             chunks = chunk_plain_text(raw_text)
 
         if not chunks:

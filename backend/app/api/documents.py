@@ -16,7 +16,7 @@ import uuid
 import logging
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from werkzeug.utils import secure_filename
 
@@ -44,14 +44,6 @@ MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB hard cap
 def _allowed_file(filename: str, mimetype: str) -> bool:
     ext = os.path.splitext(filename.lower())[1]
     return ext in ALLOWED_EXTENSIONS or mimetype in ALLOWED_MIME_TYPES
-
-
-def _upload_folder() -> str:
-    folder = current_app.config.get("UPLOAD_FOLDER") or os.path.join(
-        current_app.instance_path, "uploads"
-    )
-    os.makedirs(folder, exist_ok=True)
-    return folder
 
 
 def _doc_dict(doc: Document) -> dict:
@@ -106,13 +98,6 @@ def upload_document():
 
     title = (request.form.get("title") or "").strip() or os.path.splitext(filename)[0]
 
-    # Save file to disk
-    unique_name = f"{uuid.uuid4()}_{filename}"
-    folder = _upload_folder()
-    file_path = os.path.join(folder, unique_name)
-    with open(file_path, "wb") as fh:
-        fh.write(data)
-
     # Create Document row
     doc = Document(
         id=str(uuid.uuid4()),
@@ -131,15 +116,14 @@ def upload_document():
         document_id=doc.id,
         user_id=user_id,
         source_type="upload",
-        file_path=file_path,
         status="processing",
     )
     db.session.add(ingestion)
     db.session.commit()
 
-    # Run ingestion pipeline (synchronous)
+    # Run ingestion pipeline (in-memory, no disk I/O)
     try:
-        ingest_upload(doc, ingestion, file_path)
+        ingest_upload(doc, ingestion, data)
     except Exception as exc:
         log.warning("Upload ingestion failed for doc=%s: %s", doc.id, exc)
         # ingestion already marked failed inside ingest_upload
