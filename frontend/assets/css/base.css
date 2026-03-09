@@ -55,16 +55,17 @@ a {
   top: 0;
   z-index: 30;
   border-bottom: 1px solid rgba(29, 35, 53, 0.08);
-  background: rgba(250, 245, 235, 0.86);
-  backdrop-filter: blur(12px);
+  background: rgba(250, 245, 235, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .topbar-inner {
-  min-height: 74px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
 
 .topbar-actions {
@@ -73,12 +74,95 @@ a {
   gap: 10px;
 }
 
+/* ── Brand ── */
 .brand {
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.32);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.brand-mark svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+}
+
+.brand:hover .brand-mark {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.42);
+}
+
+.brand-name {
   font-family: "Sora", sans-serif;
-  font-size: 1.34rem;
+  font-size: 1.18rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+/* ── Top nav links (landing page) ── */
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.nav-link:hover {
+  color: var(--ink);
+  background: rgba(29, 35, 53, 0.06);
+}
+
+.nav-link.active {
+  color: var(--brand);
+  background: rgba(15, 118, 110, 0.08);
+}
+
+/* ── User avatar ── */
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--brand), var(--brand-deep));
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(15, 118, 110, 0.28);
 }
 
 .button {
@@ -125,6 +209,17 @@ a {
   border-color: rgba(29, 35, 53, 0.34);
 }
 
+.button-danger {
+  background: rgba(161, 55, 22, 0.08);
+  border-color: rgba(161, 55, 22, 0.22);
+  color: #a13716;
+}
+
+.button-danger:hover {
+  background: rgba(161, 55, 22, 0.13);
+  border-color: rgba(161, 55, 22, 0.36);
+}
+
 .button-full {
   width: 100%;
 }
@@ -148,6 +243,8 @@ a {
   background: rgba(255, 255, 255, 0.82);
   padding: 0.36rem 0.8rem;
   font-size: 0.88rem;
+  font-weight: 700;
+}
   font-weight: 700;
 }
 
@@ -175,11 +272,15 @@ code {
 
 @media (max-width: 760px) {
   .topbar-inner {
-    min-height: 66px;
+    min-height: 60px;
   }
 
-  .brand {
-    font-size: 1.14rem;
+  .brand-name {
+    font-size: 1rem;
+  }
+
+  .topbar-nav {
+    display: none;
   }
 
   .topbar-actions {

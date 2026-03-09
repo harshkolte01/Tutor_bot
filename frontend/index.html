@@ -14,16 +14,40 @@
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
-      <a class="brand" href="./index.html">Tutor Bot</a>
+      <a class="brand" href="./index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="10" fill="url(#brand-grad)"/>
+            <path d="M10 20l4-5 4 3 4-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="20" r="1.8" fill="#fff"/>
+            <circle cx="14" cy="15" r="1.8" fill="#fff"/>
+            <circle cx="18" cy="18" r="1.8" fill="#fff"/>
+            <circle cx="22" cy="11" r="1.8" fill="#fff"/>
+            <defs>
+              <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#095850"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <span class="brand-name">Tutor Bot</span>
+      </a>
+
+      <nav class="topbar-nav" data-authed-action hidden>
+        <a class="nav-link" href="./pages/documents.html">Documents</a>
+        <a class="nav-link" href="./pages/chat.html">Chat</a>
+      </nav>
+
       <div class="topbar-actions">
-        <span class="user-chip" data-user-slot hidden></span>
-        <!-- auth-only app links -->
-        <a class="button button-ghost" href="./pages/documents.html" data-authed-action hidden>Documents</a>
-        <a class="button button-ghost" href="./pages/chat.html" data-authed-action hidden>Chat</a>
         <!-- guest links -->
         <a class="button button-ghost" href="./pages/login.html" data-guest-action="signin">Log In</a>
-        <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Create Free Account</a>
-        <button class="button button-ghost" type="button" data-signout hidden>Sign Out</button>
+        <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Get Started</a>
+        <!-- auth links -->
+        <div class="nav-user" data-authed-action hidden>
+          <span class="user-avatar" data-user-slot></span>
+          <button class="button button-danger" type="button" data-signout>Sign Out</button>
+        </div>
       </div>
     </div>
   </header>
@@ -32,114 +56,198 @@
     <section class="hero container">
       <div class="hero-copy">
         <p class="eyebrow" data-reveal>AI STUDY WORKSPACE</p>
-        <h1 data-reveal>
-          Tutor Bot is your private study partner for notes, questions, quizzes, and revision.
+        <h1 class="hero-heading" data-reveal>
+          Study smarter.<br>Know more.
         </h1>
-        <p class="hero-description" data-reveal>
-          Instead of switching across chat apps, notes, and quiz tools, Tutor Bot keeps your study workflow in one focused place.
-          Upload material, ask clear questions, and practice weak topics with a single account.
+        <p class="hero-tagline" data-reveal>
+          Upload your notes. Ask anything. Build quizzes.
         </p>
+        <div class="badge-pills" data-reveal>
+          <span class="badge">
+            <svg class="badge-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 6h18l8 8v28a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.12"/>
+              <path d="M12 6h18l8 8v28a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+              <path d="M30 6v8h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M17 22h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M17 28h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M17 34h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="35" cy="35" r="7" fill="currentColor" opacity="0.15"/>
+              <path d="M32 35l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            PDF &amp; Docs
+          </span>
+          <span class="badge">
+            <svg class="badge-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="14" width="32" height="24" rx="7" fill="currentColor" opacity="0.12"/>
+              <rect x="8" y="14" width="32" height="24" rx="7" stroke="currentColor" stroke-width="2.4"/>
+              <circle cx="18" cy="26" r="3" fill="currentColor"/>
+              <circle cx="30" cy="26" r="3" fill="currentColor"/>
+              <path d="M20 32h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M24 14v-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="24" cy="8" r="2.2" fill="currentColor"/>
+              <path d="M8 28H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M40 22h3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            AI Chat
+          </span>
+          <span class="badge">
+            <svg class="badge-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="24" r="18" fill="currentColor" opacity="0.10"/>
+              <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2.4"/>
+              <circle cx="24" cy="24" r="11" fill="currentColor" opacity="0.12"/>
+              <circle cx="24" cy="24" r="11" stroke="currentColor" stroke-width="2.2"/>
+              <circle cx="24" cy="24" r="4.5" fill="currentColor"/>
+              <path d="M36 12l-7.5 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M36 12h-5v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Auto Quizzes
+          </span>
+          <span class="badge">
+            <svg class="badge-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="8" width="36" height="32" rx="6" fill="currentColor" opacity="0.10"/>
+              <rect x="6" y="8" width="36" height="32" rx="6" stroke="currentColor" stroke-width="2.4"/>
+              <path d="M13 30l7-8 6 5 9-11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="13" cy="30" r="2.4" fill="currentColor"/>
+              <circle cx="20" cy="22" r="2.4" fill="currentColor"/>
+              <circle cx="26" cy="27" r="2.4" fill="currentColor"/>
+              <circle cx="35" cy="16" r="2.4" fill="currentColor"/>
+            </svg>
+            Progress Tracking
+          </span>
+        </div>
         <div class="hero-actions" data-reveal>
-          <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Start Learning Faster</a>
-          <a class="button button-ghost" href="#what-it-does">See What It Can Do</a>
+          <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Start for Free</a>
+          <a class="button button-ghost" href="#what-it-does">See How It Works</a>
         </div>
       </div>
-      <aside class="hero-summary" data-reveal>
-        <h2>What is Tutor Bot exactly?</h2>
-        <p>
-          Tutor Bot is a personal AI study system that organizes your learning around your own material.
-          It is designed for students who want focused explanations, source-based answers, and measurable improvement.
-        </p>
-        <ul>
-          <li>Personal account with secure sign-in</li>
-          <li>User-scoped workspace and data isolation</li>
-          <li>Structured flow: learn, practice, improve</li>
-        </ul>
+      <aside class="hero-visual" data-reveal>
+        <div class="chat-preview">
+          <div class="chat-msg bot">
+            <span>👋 What should we work on today?</span>
+          </div>
+          <div class="chat-msg user">
+            <span>Explain Chapter 3 from my notes.</span>
+          </div>
+          <div class="chat-msg bot">
+            <span>Based on your uploaded PDF — here's a clear breakdown of the key concepts…</span>
+          </div>
+          <div class="chat-msg user">
+            <span>Now quiz me on it.</span>
+          </div>
+          <div class="chat-msg bot typing">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
       </aside>
     </section>
 
     <section class="section container" id="what-it-does">
       <div class="section-heading" data-reveal>
-        <p class="eyebrow">WHAT IT CAN DO</p>
-        <h2>Core capabilities for real study outcomes</h2>
+        <p class="eyebrow">WHAT IT DOES</p>
+        <h2>Everything you need to learn, nothing you don't.</h2>
       </div>
       <div class="feature-grid">
         <article class="feature-card" data-reveal>
-          <h3>Context-Aware Tutor Chat</h3>
-          <p>Ask direct questions and get explanations grounded in your material, not random generic responses.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="14" width="32" height="24" rx="7" fill="currentColor" opacity="0.12"/>
+              <rect x="8" y="14" width="32" height="24" rx="7" stroke="currentColor" stroke-width="2.4"/>
+              <circle cx="18" cy="26" r="3" fill="currentColor"/>
+              <circle cx="30" cy="26" r="3" fill="currentColor"/>
+              <path d="M20 32h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M24 14v-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="24" cy="8" r="2.2" fill="currentColor"/>
+              <path d="M8 28H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M40 22h3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Context-Aware Chat</h3>
+          <p>Answers grounded in your material, not generic guesses.</p>
         </article>
         <article class="feature-card" data-reveal>
-          <h3>Document-Driven Learning</h3>
-          <p>Bring your notes, slides, or PDFs so your learning assistant is aligned to your syllabus and exams.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 6h18l8 8v28a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.12"/>
+              <path d="M12 6h18l8 8v28a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+              <path d="M30 6v8h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M17 22h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M17 28h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M17 34h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="35" cy="35" r="7" fill="currentColor" opacity="0.15"/>
+              <path d="M32 35l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Document Learning</h3>
+          <p>Your notes, your syllabus. Fully aligned.</p>
         </article>
         <article class="feature-card" data-reveal>
-          <h3>Targeted Quiz Practice</h3>
-          <p>Generate focused practice from weak topics and reinforce concepts with short, repeatable drills.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="24" r="18" fill="currentColor" opacity="0.10"/>
+              <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2.4"/>
+              <circle cx="24" cy="24" r="11" fill="currentColor" opacity="0.12"/>
+              <circle cx="24" cy="24" r="11" stroke="currentColor" stroke-width="2.2"/>
+              <circle cx="24" cy="24" r="4.5" fill="currentColor"/>
+              <path d="M36 12l-7.5 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M36 12h-5v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Quiz Practice</h3>
+          <p>Drill weak topics in seconds. Repeat until solid.</p>
         </article>
         <article class="feature-card" data-reveal>
+          <div class="feature-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="8" width="36" height="32" rx="6" fill="currentColor" opacity="0.10"/>
+              <rect x="6" y="8" width="36" height="32" rx="6" stroke="currentColor" stroke-width="2.4"/>
+              <path d="M13 30l7-8 6 5 9-11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="13" cy="30" r="2.4" fill="currentColor"/>
+              <circle cx="20" cy="22" r="2.4" fill="currentColor"/>
+              <circle cx="26" cy="27" r="2.4" fill="currentColor"/>
+              <circle cx="35" cy="16" r="2.4" fill="currentColor"/>
+            </svg>
+          </div>
           <h3>Progress Visibility</h3>
-          <p>Track your learning rhythm over time to spot gaps early and revise before they become bigger problems.</p>
+          <p>Spot gaps before exams do.</p>
         </article>
       </div>
     </section>
 
-    <section class="section container">
-      <div class="section-heading" data-reveal>
-        <p class="eyebrow">WHY STUDENTS CHOOSE IT</p>
-        <h2>Practical advantages over scattered tools</h2>
-      </div>
-      <div class="pros-grid">
-        <article class="pro-item" data-reveal>
-          <h3>One workflow, less friction</h3>
-          <p>Notes, Q&A, and practice live together so you spend more time learning and less time switching tabs.</p>
-        </article>
-        <article class="pro-item" data-reveal>
-          <h3>Built for revision cycles</h3>
-          <p>Turn confusion into focused follow-up questions and then convert those topics into quizzes instantly.</p>
-        </article>
-        <article class="pro-item" data-reveal>
-          <h3>Private by default</h3>
-          <p>Your workspace is tied to your account, with protected endpoints and authenticated access patterns.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section section-steps container">
+    <section class="section section-steps container" id="how-it-works">
       <div class="section-heading" data-reveal>
         <p class="eyebrow">HOW IT WORKS</p>
-        <h2>Three simple steps</h2>
+        <h2>Three steps to better studying.</h2>
       </div>
       <ol class="steps-list">
         <li class="step-item" data-reveal>
           <span class="step-number">1</span>
           <div>
             <h3>Create your account</h3>
-            <p>Set up your workspace in less than a minute.</p>
+            <p>Ready in under a minute.</p>
           </div>
         </li>
         <li class="step-item" data-reveal>
           <span class="step-number">2</span>
           <div>
-            <h3>Study with focused guidance</h3>
-            <p>Ask clear questions and keep concepts organized around your topics.</p>
+            <h3>Upload &amp; ask</h3>
+            <p>Chat with your own material.</p>
           </div>
         </li>
         <li class="step-item" data-reveal>
           <span class="step-number">3</span>
           <div>
-            <h3>Practice and improve</h3>
-            <p>Convert weak areas into repeatable quiz practice and track your progress.</p>
+            <h3>Quiz &amp; improve</h3>
+            <p>Turn weak gaps into real gains.</p>
           </div>
         </li>
       </ol>
     </section>
 
     <section class="cta container" data-reveal>
-      <h2>Start building a smarter study routine today.</h2>
-      <p>Meaningful learning is consistent, focused, and measurable. Tutor Bot helps you do exactly that.</p>
+      <h2>Your smarter study routine starts now.</h2>
       <div class="cta-actions">
-        <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Create Account</a>
-        <a class="button button-ghost" href="./pages/login.html" data-guest-action="signin">I Already Have an Account</a>
+        <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Create Free Account</a>
+        <a class="button button-ghost" href="./pages/login.html" data-guest-action="signin">Log In</a>
       </div>
     </section>
   </main>

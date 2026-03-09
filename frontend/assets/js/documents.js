@@ -25,8 +25,12 @@ function getToken() {
 }
 
 // ── Topbar ────────────────────────────────────────────────────────────────────
-document.querySelector("[data-user-slot]").textContent =
-  user?.username || user?.email || "";
+const _displayName = user?.username || user?.email || "";
+const _avatarEl = document.querySelector("[data-user-slot]");
+if (_avatarEl) {
+  _avatarEl.textContent = _displayName.charAt(0).toUpperCase();
+  _avatarEl.title = _displayName;
+}
 document.querySelector("[data-signout]").addEventListener("click", () => {
   clearSession();
   window.location.replace("./login.html");
