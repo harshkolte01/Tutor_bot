@@ -32,12 +32,13 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from app.services.rag.retrieval import retrieve_chunks
+from app.services.rag.retrieval import retrieve_chunks, retrieve_chunks_diversified
 from app.services.wrapper.client import WrapperError, get_client
 
 log = logging.getLogger(__name__)
 
 _FALLBACK_FAST   = "gemini/gemini-2.5-flash"   # reliable fallback if primary fails
+_DEFAULT_MINIMUM_DOCUMENT_COUNT = 2
 
 _SYSTEM_TEMPLATE = """\
 You are a knowledgeable and helpful AI tutor. Answer the student's question \
@@ -49,6 +50,8 @@ they contain information relevant to the student's question.
 IF the context contains relevant information:
 - Answer the question using the context.
 - Cite sources using [Source N] notation.
+- When multiple sources are relevant, synthesize them into one answer.
+- If some retrieved sources are weak or irrelevant, rely on the relevant ones only.
 - If the answer is long, break it into clearly labelled sections with headings.
 - Be thorough and complete — do not stop mid-answer.
 
@@ -179,12 +182,23 @@ def generate_answer(
         sources = []
     else:
         try:
-            sources = retrieve_chunks(
-                query_text=question,
-                user_id=user_id,
+            minimum_document_count = _minimum_document_count(
                 top_k=top_k,
-                document_ids=document_ids if document_ids else None,
+                document_ids=document_ids,
             )
+            retrieve_kwargs = {
+                "query_text": question,
+                "user_id": user_id,
+                "top_k": top_k,
+                "document_ids": document_ids if document_ids else None,
+            }
+            if minimum_document_count > 1:
+                sources = retrieve_chunks_diversified(
+                    **retrieve_kwargs,
+                    minimum_document_count=minimum_document_count,
+                )
+            else:
+                sources = retrieve_chunks(**retrieve_kwargs)
         except WrapperError as exc:
             log.warning("answering: retrieval failed, proceeding without context: %s", exc)
             sources = []
@@ -222,3 +236,15 @@ def generate_answer(
         "sources":        sources,
         "out_of_context": out_of_context,
     }
+
+
+def _minimum_document_count(
+    *,
+    top_k: int,
+    document_ids: List[str] | None,
+) -> int:
+    if top_k <= 1:
+        return 1
+    if document_ids is not None and len(document_ids) <= 1:
+        return 1
+    return min(_DEFAULT_MINIMUM_DOCUMENT_COUNT, top_k)
