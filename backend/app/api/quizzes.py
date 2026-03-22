@@ -12,6 +12,7 @@ from app.db.models.quiz_attempt_answer import QuizAttemptAnswer
 from app.db.models.quiz_question import QuizQuestion
 from app.db.models.quiz_question_source import QuizQuestionSource
 from app.extensions import db
+from app.services.analytics.events import EVENT_QUIZ_SUBMITTED, record_event
 from app.services.quiz.generator import QuizGenerationError, generate_and_store_quiz
 from app.services.quiz.grading import QuizGradingError, grade_quiz_submission
 from app.services.quiz.spec_parser import QuizRequestSpec, QuizSpecError, parse_quiz_request
@@ -294,6 +295,22 @@ def submit_quiz_attempt(quiz_id: str, attempt_id: str):
     attempt.total_marks = grading_result["total_marks"]
     attempt.summary_json = summarize_attempt(quiz=quiz, grading_result=grading_result)
 
+    score_percent = round((attempt.score / attempt.total_marks) * 100, 2) if attempt.total_marks else 0.0
+    topic = quiz.spec_json.get("topic") if isinstance(quiz.spec_json, dict) else None
+    record_event(
+        user_id=user_id,
+        event_type=EVENT_QUIZ_SUBMITTED,
+        entity_type="quiz_attempt",
+        entity_id=attempt.id,
+        metadata={
+            "attempt_id": attempt.id,
+            "quiz_id": quiz.id,
+            "topic": topic or quiz.title,
+            "score": attempt.score,
+            "total_marks": attempt.total_marks,
+            "score_percent": score_percent,
+        },
+    )
     db.session.commit()
 
     answers = _load_attempt_answers(attempt.id)

@@ -9,6 +9,7 @@ from app.db.models.quiz import Quiz
 from app.db.models.quiz_question import QuizQuestion
 from app.db.models.quiz_question_source import QuizQuestionSource
 from app.extensions import db
+from app.services.analytics.events import EVENT_QUIZ_CREATED, record_event
 from app.services.quiz.spec_parser import QuizRequestSpec
 from app.services.quiz.validator import (
     QuizValidationError,
@@ -78,6 +79,19 @@ def generate_and_store_quiz(user_id: str, spec: QuizRequestSpec) -> Quiz:
                     )
                 )
 
+        record_event(
+            user_id=user_id,
+            event_type=EVENT_QUIZ_CREATED,
+            entity_type="quiz",
+            entity_id=quiz.id,
+            metadata={
+                "quiz_id": quiz.id,
+                "topic": spec.topic,
+                "question_count": spec.question_count,
+                "total_marks": spec.total_marks,
+                "document_ids": spec.document_ids or [],
+            },
+        )
         db.session.commit()
         return quiz
     except Exception:

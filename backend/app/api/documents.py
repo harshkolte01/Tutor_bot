@@ -24,6 +24,11 @@ from app.db.models.chunk import Chunk
 from app.db.models.document import Document
 from app.db.models.document_ingestion import DocumentIngestion
 from app.extensions import db
+from app.services.analytics.events import (
+    EVENT_DOC_TEXT_ADDED,
+    EVENT_DOC_UPLOADED,
+    record_event,
+)
 from app.services.rag.ingestion import ingest_text, ingest_upload
 
 log = logging.getLogger(__name__)
@@ -119,6 +124,17 @@ def upload_document():
         status="processing",
     )
     db.session.add(ingestion)
+    record_event(
+        user_id=user_id,
+        event_type=EVENT_DOC_UPLOADED,
+        entity_type="document",
+        entity_id=doc.id,
+        metadata={
+            "document_id": doc.id,
+            "ingestion_id": ingestion.id,
+            "source_type": doc.source_type,
+        },
+    )
     db.session.commit()
 
     # Run ingestion pipeline (in-memory, no disk I/O)
@@ -178,6 +194,17 @@ def text_document():
         status="processing",
     )
     db.session.add(ingestion)
+    record_event(
+        user_id=user_id,
+        event_type=EVENT_DOC_TEXT_ADDED,
+        entity_type="document",
+        entity_id=doc.id,
+        metadata={
+            "document_id": doc.id,
+            "ingestion_id": ingestion.id,
+            "source_type": doc.source_type,
+        },
+    )
     db.session.commit()
 
     # Run ingestion pipeline (synchronous)

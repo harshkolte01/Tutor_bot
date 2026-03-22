@@ -11,6 +11,7 @@ from app.db.models.quiz_question import QuizQuestion
 from app.db.models.quiz_question_source import QuizQuestionSource
 from app.db.models.quiz_attempt import QuizAttempt
 from app.db.models.quiz_attempt_answer import QuizAttemptAnswer
+from app.db.models.event import Event
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "QuizQuestionSource",
     "QuizAttempt",
     "QuizAttemptAnswer",
+    "Event",
 ]

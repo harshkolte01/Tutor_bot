@@ -26,6 +26,7 @@ from app.db.models.chat_message import ChatMessage
 from app.db.models.chat_message_source import ChatMessageSource
 from app.db.models.document import Document
 from app.extensions import db
+from app.services.analytics.events import EVENT_CHAT_ASKED, record_event
 from app.services.rag.answering import generate_answer
 from app.services.router.classifier import classify
 from app.services.router.heuristics import route as heuristics_route
@@ -260,6 +261,19 @@ def send_message(chat_id: str):
     if chat.title == "New Chat" and content:
         chat.title = content[:80]
 
+    record_event(
+        user_id=user_id,
+        event_type=EVENT_CHAT_ASKED,
+        entity_type="chat_message",
+        entity_id=user_msg.id,
+        metadata={
+            "chat_id": chat_id,
+            "assistant_message_id": assistant_msg.id,
+            "selected_document_count": len(doc_ids_filter or []),
+            "model_used": model_used,
+            "out_of_context": bool(result.get("out_of_context", False)),
+        },
+    )
     db.session.commit()
 
     # ── 9. Reload sources with relationships ──────────────────────────────────

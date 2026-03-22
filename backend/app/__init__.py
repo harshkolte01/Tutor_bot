@@ -77,6 +77,7 @@ def create_app(env: str = None) -> Flask:
             QuizQuestionSource,
             QuizAttempt,
             QuizAttemptAnswer,
+            Event,
         )  # noqa: F401
 
         # Register blueprints
@@ -85,10 +86,12 @@ def create_app(env: str = None) -> Flask:
         from app.api.documents import documents_bp
         from app.api.chat import chat_bp
         from app.api.quizzes import quizzes_bp
+        from app.api.analytics import analytics_bp
         app.register_blueprint(auth_bp)
         app.register_blueprint(dev_bp)
         app.register_blueprint(documents_bp)
         app.register_blueprint(chat_bp)
         app.register_blueprint(quizzes_bp)
+        app.register_blueprint(analytics_bp)
 
     return app
