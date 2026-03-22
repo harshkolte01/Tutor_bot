@@ -46,6 +46,7 @@ def validate_quiz_payload(
     payload: Any,
     spec: QuizRequestSpec,
     available_sources: list[dict[str, Any]],
+    minimum_document_coverage: int = 1,
 ) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise QuizValidationError(["Quiz payload must be a JSON object."])
@@ -79,6 +80,20 @@ def validate_quiz_payload(
         if normalized_question is not None:
             normalized_questions.append(normalized_question)
             provided_marks.append(marks_value)
+
+    if minimum_document_coverage > 1:
+        cited_document_ids: set[str] = set()
+        for question in normalized_questions:
+            for chunk_id in question["citation_chunk_ids"]:
+                source = source_map.get(chunk_id)
+                document_id = source.get("document_id") if source else None
+                if document_id:
+                    cited_document_ids.add(document_id)
+        if len(cited_document_ids) < minimum_document_coverage:
+            errors.append(
+                "Quiz must cite at least "
+                f"{minimum_document_coverage} different documents across all questions."
+            )
 
     if errors:
         raise QuizValidationError(errors)

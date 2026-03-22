@@ -5,6 +5,7 @@ from typing import Any
 
 from flask import current_app
 
+from app.db.models.document import Document
 from app.db.models.quiz import Quiz
 from app.db.models.quiz_question import QuizQuestion
 from app.db.models.quiz_question_source import QuizQuestionSource
@@ -16,7 +17,7 @@ from app.services.quiz.validator import (
     extract_quiz_json,
     validate_quiz_payload,
 )
-from app.services.rag.retrieval import retrieve_chunks
+from app.services.rag.retrieval import retrieve_chunks, retrieve_chunks_diversified
 from app.services.wrapper.client import WrapperError, get_client
 
 log = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ log = logging.getLogger(__name__)
 PRIMARY_MODEL = "openrouter/google/gemma-3-27b-it:free"
 FALLBACK_MODEL = "gemini/gemini-2.5-flash"
 MAX_VALIDATION_ATTEMPTS = 3
+MAX_SOURCE_DOCUMENT_COVERAGE = 3
 
 
 class QuizGenerationError(RuntimeError):
@@ -101,13 +103,35 @@ def generate_and_store_quiz(user_id: str, spec: QuizRequestSpec) -> Quiz:
 
 def _retrieve_context_sources(user_id: str, spec: QuizRequestSpec) -> list[dict[str, Any]]:
     top_k = min(max(spec.question_count * 2, 6), 12)
-    try:
-        sources = retrieve_chunks(
-            query_text=spec.retrieval_query,
-            user_id=user_id,
-            top_k=top_k,
-            document_ids=spec.document_ids,
+    allowed_document_ids = _load_allowed_document_ids(user_id=user_id, spec=spec)
+    if not allowed_document_ids:
+        raise QuizGenerationError(
+            "No ready document content was found for this quiz request.",
+            status_code=400,
         )
+
+    target_document_count = _target_source_document_count(
+        question_count=spec.question_count,
+        allowed_document_count=len(allowed_document_ids),
+        top_k=top_k,
+    )
+
+    try:
+        if target_document_count > 1:
+            sources = retrieve_chunks_diversified(
+                query_text=spec.retrieval_query,
+                user_id=user_id,
+                top_k=top_k,
+                document_ids=allowed_document_ids,
+                minimum_document_count=target_document_count,
+            )
+        else:
+            sources = retrieve_chunks(
+                query_text=spec.retrieval_query,
+                user_id=user_id,
+                top_k=top_k,
+                document_ids=allowed_document_ids,
+            )
     except WrapperError as exc:
         log.error("quiz retrieval failed for user=%s: %s", user_id, exc)
         raise QuizGenerationError(
@@ -128,6 +152,10 @@ def _generate_valid_payload(
     spec: QuizRequestSpec,
     sources: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], str]:
+    minimum_document_coverage = _document_coverage_target(
+        sources=sources,
+        question_count=spec.question_count,
+    )
     raw_response, model_used = _chat_with_fallback(_build_generation_messages(spec, sources))
     raw_for_validation = raw_response
 
@@ -138,6 +166,7 @@ def _generate_valid_payload(
                 payload=payload,
                 spec=spec,
                 available_sources=sources,
+                minimum_document_coverage=minimum_document_coverage,
             )
             return validated, model_used
         except QuizValidationError as exc:
@@ -194,6 +223,10 @@ def _build_generation_messages(
 ) -> list[dict[str, str]]:
     allowed_types = ", ".join(spec.question_types)
     source_block = _build_source_block(sources)
+    document_coverage_rule = _build_document_coverage_rule(
+        sources=sources,
+        question_count=spec.question_count,
+    )
     type_instructions: list[str] = []
     if "mcq_single" in spec.question_types:
         type_instructions.append(
@@ -211,6 +244,7 @@ def _build_generation_messages(
         "Use only the information present in the provided sources.\n"
         "Return valid JSON only. Do not wrap it in markdown fences.\n"
         "Each question must include at least one citation chunk_id from the source list.\n"
+        f"{document_coverage_rule}\n"
         "Do not invent chunk IDs or unsupported facts."
     )
 
@@ -245,6 +279,8 @@ def _build_generation_messages(
         "- Keep questions concise and answerable from the cited sources.\n"
         "- Avoid duplicate questions.\n"
         "- Cite 1 to 3 chunk IDs per question.\n\n"
+        "Coverage rules:\n"
+        f"{document_coverage_rule}\n\n"
         "Available sources:\n"
         f"{source_block}"
     )
@@ -263,12 +299,17 @@ def _build_repair_messages(
 ) -> list[dict[str, str]]:
     error_block = "\n".join(f"- {error}" for error in errors)
     source_block = _build_source_block(sources)
+    document_coverage_rule = _build_document_coverage_rule(
+        sources=sources,
+        question_count=spec.question_count,
+    )
     repair_prompt = (
         "The previous quiz response was invalid.\n"
         "Fix it and return corrected JSON only, with no markdown fences.\n"
         f"The quiz must still contain exactly {spec.question_count} questions.\n"
         f"Allowed question types: {', '.join(spec.question_types)}\n"
         "Every question must cite existing chunk IDs from the provided sources.\n\n"
+        f"Coverage rules:\n{document_coverage_rule}\n\n"
         f"Validation errors:\n{error_block}\n\n"
         f"Previous response:\n{previous_response}\n\n"
         f"Available sources:\n{source_block}"
@@ -294,3 +335,66 @@ def _build_source_block(sources: list[dict[str, Any]]) -> str:
             f"{snippet}"
         )
     return "\n\n".join(lines)
+
+
+def _load_allowed_document_ids(user_id: str, spec: QuizRequestSpec) -> list[str]:
+    query = Document.query.filter(
+        Document.user_id == user_id,
+        Document.is_deleted.is_(False),
+        Document.current_ingestion_id.isnot(None),
+    )
+    if spec.document_ids:
+        query = query.filter(Document.id.in_(spec.document_ids))
+
+    documents = query.order_by(Document.created_at.desc()).all()
+    return [document.id for document in documents]
+
+
+def _target_source_document_count(
+    *,
+    question_count: int,
+    allowed_document_count: int,
+    top_k: int,
+) -> int:
+    if allowed_document_count <= 1 or question_count <= 1 or top_k <= 1:
+        return 1
+    return min(
+        allowed_document_count,
+        question_count,
+        top_k,
+        MAX_SOURCE_DOCUMENT_COVERAGE,
+    )
+
+
+def _document_coverage_target(
+    *,
+    sources: list[dict[str, Any]],
+    question_count: int,
+) -> int:
+    unique_document_ids = {
+        source["document_id"]
+        for source in sources
+        if source.get("document_id")
+    }
+    return _target_source_document_count(
+        question_count=question_count,
+        allowed_document_count=len(unique_document_ids),
+        top_k=len(sources),
+    )
+
+
+def _build_document_coverage_rule(
+    *,
+    sources: list[dict[str, Any]],
+    question_count: int,
+) -> str:
+    document_coverage_target = _document_coverage_target(
+        sources=sources,
+        question_count=question_count,
+    )
+    if document_coverage_target <= 1:
+        return "Use the most relevant supplied document chunks."
+    return (
+        f"Cover at least {document_coverage_target} different documents across the full quiz. "
+        "Do not let a single document supply every question when multiple documents are available."
+    )

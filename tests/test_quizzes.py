@@ -47,6 +47,7 @@ from app.db.models.document_ingestion import DocumentIngestion  # noqa: E402
 from app.db.models.user import User  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.services.quiz import generator as quiz_generator  # noqa: E402
+from app.services.quiz.spec_parser import parse_quiz_request  # noqa: E402
 
 
 def require(condition: bool, message: str) -> None:
@@ -81,6 +82,8 @@ password = "quiztest123"
 
 original_retrieve = quiz_generator._retrieve_context_sources
 original_get_client = quiz_generator.get_client
+original_retrieve_chunks = quiz_generator.retrieve_chunks
+original_retrieve_chunks_diversified = quiz_generator.retrieve_chunks_diversified
 fake_client_holder: dict[str, int] = {}
 
 
@@ -196,7 +199,7 @@ try:
     require(me_response.get_json()["user"]["id"] == user_a_id, "wrong /me user returned")
     print("auth setup is working")
 
-    hdr("SEED READY DOCUMENT FOR USER A")
+    hdr("SEED READY DOCUMENTS FOR USER A")
     with app.app_context():
         document = Document(
             user_id=user_a_id,
@@ -232,10 +235,47 @@ try:
             embedding=[0.0] * 1536,
         )
         db.session.add(chunk)
+
+        second_document = Document(
+            user_id=user_a_id,
+            title="Python Functions Notes",
+            source_type="text",
+            original_text=(
+                "A function groups reusable logic. Python functions can accept "
+                "parameters and may return values."
+            ),
+        )
+        db.session.add(second_document)
+        db.session.flush()
+
+        second_ingestion = DocumentIngestion(
+            document_id=second_document.id,
+            user_id=user_a_id,
+            source_type="text",
+            text_snapshot=second_document.original_text,
+            status="ready",
+            completed_at=datetime.now(timezone.utc),
+        )
+        db.session.add(second_ingestion)
+        db.session.flush()
+
+        second_document.current_ingestion_id = second_ingestion.id
+
+        second_chunk = Chunk(
+            user_id=user_a_id,
+            document_id=second_document.id,
+            ingestion_id=second_ingestion.id,
+            chunk_index=0,
+            content=second_document.original_text,
+            embedding=[0.0] * 1536,
+        )
+        db.session.add(second_chunk)
         db.session.commit()
 
         fake_client_holder["chunk_id"] = chunk.id
+        fake_client_holder["chunk_id_two"] = second_chunk.id
         doc_id = document.id
+        second_doc_id = second_document.id
         fake_source = {
             "chunk_id": chunk.id,
             "document_id": document.id,
@@ -245,11 +285,65 @@ try:
             "source_type": "text",
             "filename": None,
         }
+        fake_source_two = {
+            "chunk_id": second_chunk.id,
+            "document_id": second_document.id,
+            "snippet": second_chunk.content,
+            "score": 0.97,
+            "document_title": second_document.title,
+            "source_type": "text",
+            "filename": None,
+        }
+
+    hdr("MULTI-DOCUMENT SOURCE COVERAGE")
+    retrieve_calls: dict[str, dict] = {}
+
+    def fake_retrieve_chunks(**kwargs):
+        retrieve_calls["basic"] = kwargs
+        return [fake_source]
+
+    def fake_retrieve_chunks_diversified(**kwargs):
+        retrieve_calls["diversified"] = kwargs
+        return [fake_source, fake_source_two]
+
+    quiz_generator.retrieve_chunks = fake_retrieve_chunks
+    quiz_generator.retrieve_chunks_diversified = fake_retrieve_chunks_diversified
+
+    multi_doc_spec = parse_quiz_request(
+        {
+            "topic": "Python basics",
+            "question_count": 2,
+            "marks": 10,
+        }
+    )
+    with app.app_context():
+        multi_doc_sources = quiz_generator._retrieve_context_sources(
+            user_id=user_a_id,
+            spec=multi_doc_spec,
+        )
+    require("basic" not in retrieve_calls, "all-ready quiz flow should not use basic retrieval")
+    require("diversified" in retrieve_calls, "all-ready quiz flow should use diversified retrieval")
+    require(
+        set(retrieve_calls["diversified"]["document_ids"]) == {doc_id, second_doc_id},
+        "diversified retrieval did not receive all ready document IDs",
+    )
+    require(
+        retrieve_calls["diversified"]["minimum_document_count"] == 2,
+        "diversified retrieval should require two documents for a two-question quiz",
+    )
+    require(
+        {source["document_id"] for source in multi_doc_sources} == {doc_id, second_doc_id},
+        "retrieved sources should include both ready documents",
+    )
+    print("all-ready quiz retrieval now requests multi-document coverage")
+
+    quiz_generator.retrieve_chunks = original_retrieve_chunks
+    quiz_generator.retrieve_chunks_diversified = original_retrieve_chunks_diversified
 
     quiz_generator._retrieve_context_sources = (
         lambda user_id, spec: [fake_source] if user_id == user_a_id else []
     )
-    print(f"seeded document_id={doc_id}")
+    print(f"seeded document_ids={doc_id}, {second_doc_id}")
 
     hdr("AUTH ENFORCEMENT")
     unauth_list = client.get("/api/quizzes")
@@ -312,6 +406,86 @@ try:
 
     print(f"quiz created: {quiz_id}")
 
+    hdr("POST /api/quizzes WITH ALL READY DOCUMENTS")
+
+    class MultiDocumentFakeClient:
+        def chat_completions(self, **kwargs):
+            content = json.dumps(
+                {
+                    "title": "Python Sources Quiz",
+                    "instructions": "Use both study sources.",
+                    "questions": [
+                        {
+                            "type": "mcq_single",
+                            "question_text": "What is Python described as in the first notes?",
+                            "options": [
+                                "A file archive",
+                                "A programming language",
+                                "A shell alias",
+                                "A browser tab",
+                            ],
+                            "correct_answer": {"option_index": 1},
+                            "marks": 5,
+                            "explanation": "The first notes describe Python as a programming language.",
+                            "citations": [fake_client_holder["chunk_id"]],
+                        },
+                        {
+                            "type": "mcq_single",
+                            "question_text": "What can Python functions do according to the second notes?",
+                            "options": [
+                                "Only print text",
+                                "Accept parameters and return values",
+                                "Run without definitions",
+                                "Store database schemas",
+                            ],
+                            "correct_answer": {"option_index": 1},
+                            "marks": 5,
+                            "explanation": "The second notes say functions can accept parameters and return values.",
+                            "citations": [fake_client_holder["chunk_id_two"]],
+                        },
+                    ],
+                }
+            )
+            return {"choices": [{"message": {"content": content}}]}
+
+    quiz_generator.get_client = lambda: MultiDocumentFakeClient()
+    quiz_generator._retrieve_context_sources = (
+        lambda user_id, spec: [fake_source, fake_source_two] if user_id == user_a_id else []
+    )
+
+    create_multi_doc_quiz = client.post(
+        "/api/quizzes",
+        headers=auth_header(token_a),
+        json={
+            "topic": "Python basics",
+            "question_count": 2,
+            "difficulty": "easy",
+            "marks": 10,
+        },
+    )
+    check(create_multi_doc_quiz, 201)
+    multi_doc_payload = create_multi_doc_quiz.get_json()
+    multi_doc_questions = multi_doc_payload["questions"]
+    multi_doc_source_docs = {
+        source["document_id"]
+        for question in multi_doc_questions
+        for source in question["sources"]
+    }
+    require(
+        multi_doc_payload["quiz"]["spec"]["document_ids"] is None,
+        "all-ready quiz mode should not persist explicit document_ids",
+    )
+    require(
+        multi_doc_source_docs == {doc_id, second_doc_id},
+        "multi-document quiz should cite both ready documents",
+    )
+    print("all-ready quiz generation now keeps coverage across multiple documents")
+
+    quiz_generator.get_client = lambda: fake_client
+    quiz_generator._retrieve_context_sources = (
+        lambda user_id, spec: [fake_source] if user_id == user_a_id else []
+    )
+
     hdr("GET /api/quizzes")
     list_a = client.get("/api/quizzes", headers=auth_header(token_a))
     check(list_a, 200)
@@ -360,6 +534,8 @@ try:
 finally:
     quiz_generator._retrieve_context_sources = original_retrieve
     quiz_generator.get_client = original_get_client
+    quiz_generator.retrieve_chunks = original_retrieve_chunks
+    quiz_generator.retrieve_chunks_diversified = original_retrieve_chunks_diversified
     with app.app_context():
         for email in (email_a, email_b):
             user = User.query.filter_by(email=email).first()
