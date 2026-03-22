@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics | Tutor Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <script src="../config.js"></script>
+  <style>
+    .analytics-page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .analytics-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .analytics-shell {
+      display: grid;
+      gap: 24px;
+      padding-bottom: 32px;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric-card {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(29, 35, 53, 0.08);
+      background: linear-gradient(180deg, rgba(250, 245, 235, 0.88), #ffffff);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-card-label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .metric-card-value {
+      display: block;
+      margin-top: 10px;
+      font-family: "Sora", sans-serif;
+      font-size: 1.8rem;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+
+    .metric-card-note {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .analytics-stack {
+      display: grid;
+      gap: 24px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: "Sora", sans-serif;
+      font-size: 1.1rem;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .section-caption {
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .event-chip-list {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .event-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.5rem 0.82rem;
+      border-radius: 999px;
+      background: rgba(250, 245, 235, 0.9);
+      border: 1px solid rgba(29, 35, 53, 0.08);
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+
+    .event-chip-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-pill {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: var(--bg-soft);
+      border: 1px solid rgba(29, 35, 53, 0.08);
+    }
+
+    .summary-pill strong {
+      display: block;
+      font-family: "Sora", sans-serif;
+      font-size: 1.1rem;
+    }
+
+    .summary-pill span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .activity-chart {
+      display: grid;
+      grid-template-columns: repeat(14, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+      min-height: 240px;
+      margin-top: 18px;
+    }
+
+    .activity-day {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .activity-bar-shell {
+      width: 100%;
+      max-width: 34px;
+      height: 170px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.04), rgba(15, 23, 42, 0.12));
+      display: flex;
+      align-items: flex-end;
+      padding: 4px;
+    }
+
+    .activity-bar {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: rgba(15, 23, 42, 0.04);
+      min-height: 0;
+    }
+
+    .activity-segment {
+      width: 100%;
+      min-height: 6px;
+    }
+
+    .activity-day-label {
+      font-size: 0.77rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .activity-day-total {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .score-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .score-date {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .score-bar-shell {
+      position: relative;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0f766e, #14b8a6);
+    }
+
+    .score-meta {
+      text-align: right;
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .weak-topic-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .weak-topic-card {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(29, 35, 53, 0.08);
+      background: linear-gradient(180deg, rgba(250, 245, 235, 0.88), #ffffff);
+    }
+
+    .weak-topic-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .weak-topic-head h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .topic-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.34rem 0.72rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: rgba(161, 55, 22, 0.1);
+      color: #a13716;
+    }
+
+    .topic-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .topic-meta {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--bg-soft);
+      border: 1px solid rgba(29, 35, 53, 0.08);
+    }
+
+    .topic-meta-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .topic-meta-value {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .empty-analytics {
+      padding: 36px 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed rgba(29, 35, 53, 0.18);
+      border-radius: 18px;
+      background: rgba(250, 245, 235, 0.72);
+    }
+
+    @media (max-width: 1160px) {
+      .overview-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .analytics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .summary-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .activity-chart {
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .overview-grid,
+      .summary-strip,
+      .topic-meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .score-row {
+        grid-template-columns: 1fr;
+      }
+
+      .score-meta {
+        text-align: left;
+      }
+
+      .activity-bar-shell {
+        max-width: 26px;
+      }
+    }
+  </style>
+</head>
+<body class="app-page">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="10" fill="url(#brand-grad-analytics)"/>
+            <path d="M8 22h16" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="10" y="14" width="3.5" height="8" rx="1.2" fill="#fff"/>
+            <rect x="15.25" y="10" width="3.5" height="12" rx="1.2" fill="#d9fffb"/>
+            <rect x="20.5" y="17" width="3.5" height="5" rx="1.2" fill="#fff"/>
+            <defs>
+              <linearGradient id="brand-grad-analytics" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#095850"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <span class="brand-name">Tutor Bot</span>
+      </a>
+      <div class="topbar-actions">
+        <div class="nav-user">
+          <span class="user-avatar" data-user-slot></span>
+          <button class="button button-danger" type="button" data-signout>Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="subnav">
+    <div class="container subnav-inner">
+      <a class="subnav-link" href="./documents.html">Documents</a>
+      <a class="subnav-link" href="./chat.html">Chat</a>
+      <a class="subnav-link" href="./create-quiz.html">Create Quiz</a>
+      <a class="subnav-link" href="./take-quiz.html">Take Quiz</a>
+      <a class="subnav-link active" href="./analytics.html">Analytics</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="page-header analytics-page-header">
+      <div>
+        <h1>Analytics</h1>
+        <p>Track live study activity, quiz momentum, and the topics that need more review.</p>
+      </div>
+      <div class="analytics-header-actions">
+        <span class="status-line" id="analytics-status">Loading analytics...</span>
+        <button class="button button-ghost" id="refresh-analytics-btn" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <div class="analytics-shell">
+      <section class="overview-grid" id="overview-grid">
+        <div class="metric-card"><span class="metric-card-label">Loading</span><span class="metric-card-value">...</span></div>
+        <div class="metric-card"><span class="metric-card-label">Loading</span><span class="metric-card-value">...</span></div>
+        <div class="metric-card"><span class="metric-card-label">Loading</span><span class="metric-card-value">...</span></div>
+        <div class="metric-card"><span class="metric-card-label">Loading</span><span class="metric-card-value">...</span></div>
+        <div class="metric-card"><span class="metric-card-label">Loading</span><span class="metric-card-value">...</span></div>
+        <div class="metric-card"><span class="metric-card-label">Loading</span><span class="metric-card-value">...</span></div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h2>Activity Mix</h2>
+            <p>Live event totals from the backend analytics APIs.</p>
+          </div>
+          <div class="section-caption" id="activity-mix-caption">Fetching activity breakdown...</div>
+        </div>
+        <div class="event-chip-list" id="event-chip-list">
+          <span class="event-chip">Loading...</span>
+        </div>
+      </section>
+
+      <div class="analytics-grid">
+        <div class="analytics-stack">
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h2>14-Day Activity</h2>
+                <p>Daily study actions from uploads, chats, quizzes, and submissions.</p>
+              </div>
+              <div class="section-caption" id="progress-summary-caption">Preparing activity chart...</div>
+            </div>
+
+            <div class="summary-strip" id="summary-strip">
+              <div class="summary-pill"><strong>...</strong><span>Loading</span></div>
+              <div class="summary-pill"><strong>...</strong><span>Loading</span></div>
+              <div class="summary-pill"><strong>...</strong><span>Loading</span></div>
+              <div class="summary-pill"><strong>...</strong><span>Loading</span></div>
+            </div>
+
+            <div class="activity-chart" id="activity-chart">
+              <div class="empty-analytics" style="grid-column:1 / -1;">Loading activity chart...</div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h2>Weak Topics</h2>
+                <p>Topics with the lowest recent accuracy across submitted quizzes.</p>
+              </div>
+              <div class="section-caption" id="weak-topics-caption">Fetching weak-topic trends...</div>
+            </div>
+            <div class="weak-topic-list" id="weak-topic-list">
+              <div class="empty-analytics">Loading weak topics...</div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h2>Score Trend</h2>
+              <p>Average submitted quiz score by day.</p>
+            </div>
+            <div class="section-caption" id="score-trend-caption">Fetching score trend...</div>
+          </div>
+          <div class="score-list" id="score-list">
+            <div class="empty-analytics">Loading score trend...</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../assets/js/analytics.js"></script>
+</body>
+</html>

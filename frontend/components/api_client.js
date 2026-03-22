@@ -375,3 +375,17 @@ export function submitQuizAttempt(accessToken, quizId, attemptId, payload) {
 export function getQuizAttempt(accessToken, attemptId) {
   return authedGet(`/api/quizzes/attempts/${attemptId}`, accessToken);
 }
+
+// Analytics
+
+export function getAnalyticsOverview(accessToken) {
+  return authedGet("/api/analytics/overview", accessToken);
+}
+
+export function getAnalyticsProgress(accessToken) {
+  return authedGet("/api/analytics/progress", accessToken);
+}
+
+export function getAnalyticsWeakTopics(accessToken) {
+  return authedGet("/api/analytics/weak-topics", accessToken);
+}
