@@ -1,21 +1,15 @@
 """
-Wrapper HTTP client for all AI calls (chat completions + embeddings).
+Centralized AI gateway for generation and embeddings.
 
-Architecture rule: every LLM call in this project MUST go through this module.
+Architecture rule: every AI call in this project MUST go through this module.
 No Flask route may contact an AI provider directly.
 
-Usage:
-    from app.services.wrapper.client import get_client
-
-    client = get_client()
-    result = client.chat_completions(
-        model="routeway/glm-4.5-air:free",
-        messages=[{"role": "user", "content": "Hello"}],
-    )
-
-`get_client()` returns a module-level singleton initialised from Flask app config
-on first call. Import and use only inside a Flask application context.
+Provider split:
+  - chat / quiz / summarization generation -> Ollama
+  - embeddings -> wrapper service
 """
+
+from __future__ import annotations
 
 import logging
 from typing import Optional
@@ -27,17 +21,23 @@ from app.services.wrapper.retry import call_with_retry
 
 log = logging.getLogger(__name__)
 
+DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
+DEFAULT_OLLAMA_API_KEY = "ollama"
+DEFAULT_OLLAMA_MODEL = "qwen3.5:0.8b"
+DEFAULT_OLLAMA_REASONING_EFFORT = "none"
+DEFAULT_WRAPPER_EMBEDDING_MODEL = "gemini/gemini-embedding-001"
 
-# ── Exceptions ───────────────────────────────────────────────────────────────
 
 class WrapperError(Exception):
     """
-    Normalised error raised by WrapperClient for all failure modes.
+    Normalized error raised by the AI gateway for all failure modes.
 
     Attributes
     ----------
-    status_code : int or None   HTTP status that triggered the error (None for network errors)
-    upstream    : str           raw error body / exception message from upstream
+    status_code : int or None
+        HTTP status that triggered the error (None for network errors)
+    upstream : str
+        Raw error body / exception message from upstream
     """
 
     def __init__(self, message: str, status_code: Optional[int] = None, upstream: str = ""):
@@ -49,95 +49,36 @@ class WrapperError(Exception):
         return f"WrapperError({self.args[0]!r}, status_code={self.status_code})"
 
 
-# ── Client ───────────────────────────────────────────────────────────────────
-
-class WrapperClient:
-    """
-    Thin HTTP client that talks to the AI wrapper service.
-
-    Parameters
-    ----------
-    base_url    : str   wrapper base URL (no trailing slash)
-    key         : str   bearer token
-    timeout     : int   request timeout in seconds
-    max_retries : int   retry attempts on 429/502/503/504
-    base_delay  : float base backoff delay in seconds
-    """
+class _HTTPProviderClient:
+    """Thin JSON-over-HTTP client for one upstream provider."""
 
     def __init__(
         self,
+        *,
+        provider_name: str,
         base_url: str,
-        key: str,
+        key: str = "",
         timeout: int = 30,
         max_retries: int = 3,
         base_delay: float = 1.0,
+        require_key: bool = False,
+        key_name: str = "API key",
     ):
         if not base_url:
-            raise ValueError("WRAPPER_BASE_URL is not set")
-        if not key:
-            raise ValueError("WRAPPER_KEY is not set")
+            raise ValueError(f"{provider_name} base URL is not set")
+        if require_key and not key:
+            raise ValueError(f"{key_name} is not set")
 
+        self._provider_name = provider_name
         self._base_url = base_url.rstrip("/")
-        self._headers = {
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-        }
+        self._headers = {"Content-Type": "application/json"}
+        if key:
+            self._headers["Authorization"] = f"Bearer {key}"
         self._timeout = timeout
         self._max_retries = max_retries
         self._base_delay = base_delay
 
-    # ── Public methods ───────────────────────────────────────────────────────
-
-    def chat_completions(
-        self,
-        model: str,
-        messages: list,
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
-    ) -> dict:
-        """
-        Call POST /v1/chat/completions.
-
-        Parameters
-        ----------
-        max_retries : int | None
-            Override the client-level retry count for this call only.
-            Pass 0 to fail fast (useful when a fallback model is available).
-
-        Returns the parsed JSON response dict from the wrapper.
-        Raises WrapperError on any failure.
-        """
-        payload = {
-            "model": model,
-            "messages": messages,
-            "temperature": temperature,
-        }
-        if max_tokens is not None:
-            payload["max_tokens"] = max_tokens
-
-        log.debug("wrapper chat_completions model=%s messages_count=%d", model, len(messages))
-        return self._post("/v1/chat/completions", payload, max_retries=max_retries)
-
-    def embeddings(self, model: str, input) -> dict:
-        """
-        Call POST /v1/embeddings.
-
-        `input` may be a str or list[str].
-        Returns the parsed JSON response dict from the wrapper.
-        Raises WrapperError on any failure.
-        """
-        payload = {"model": model, "input": input}
-        log.debug(
-            "wrapper embeddings model=%s input_type=%s",
-            model,
-            type(input).__name__,
-        )
-        return self._post("/v1/embeddings", payload)
-
-    # ── Internal ─────────────────────────────────────────────────────────────
-
-    def _post(self, path: str, payload: dict, max_retries: Optional[int] = None) -> dict:
+    def post_json(self, path: str, payload: dict, max_retries: Optional[int] = None) -> dict:
         url = self._base_url + path
         retries = self._max_retries if max_retries is None else max_retries
 
@@ -157,19 +98,19 @@ class WrapperClient:
             )
         except requests.exceptions.Timeout:
             raise WrapperError(
-                f"Request to {path} timed out after {self._timeout}s",
+                f"{self._provider_name} request to {path} timed out after {self._timeout}s",
                 status_code=None,
                 upstream="timeout",
             )
         except requests.exceptions.ConnectionError as exc:
             raise WrapperError(
-                f"Connection error calling {path}: {exc}",
+                f"Connection error calling {self._provider_name} {path}: {exc}",
                 status_code=None,
                 upstream=str(exc),
             )
         except requests.exceptions.RequestException as exc:
             raise WrapperError(
-                f"Network error calling {path}: {exc}",
+                f"Network error calling {self._provider_name} {path}: {exc}",
                 status_code=None,
                 upstream=str(exc),
             )
@@ -180,7 +121,7 @@ class WrapperClient:
             except Exception:
                 body = response.text
             raise WrapperError(
-                f"Wrapper returned {response.status_code} for {path}",
+                f"{self._provider_name} returned {response.status_code} for {path}",
                 status_code=response.status_code,
                 upstream=str(body),
             )
@@ -189,22 +130,116 @@ class WrapperClient:
             return response.json()
         except Exception as exc:
             raise WrapperError(
-                f"Invalid JSON from wrapper at {path}: {exc}",
+                f"Invalid JSON from {self._provider_name} at {path}: {exc}",
                 status_code=response.status_code,
                 upstream=response.text,
             )
 
 
-# ── Singleton ────────────────────────────────────────────────────────────────
+class AIClient:
+    """Gateway client that routes generation and embedding calls to different providers."""
 
-_client: Optional[WrapperClient] = None
+    def __init__(
+        self,
+        *,
+        generation_config: dict,
+        embedding_config: dict,
+    ):
+        self._generation_config = generation_config
+        self._embedding_config = embedding_config
+        self._generation_client: Optional[_HTTPProviderClient] = None
+        self._embedding_client: Optional[_HTTPProviderClient] = None
+
+    def _get_generation_client(self) -> _HTTPProviderClient:
+        if self._generation_client is None:
+            self._generation_client = _HTTPProviderClient(**self._generation_config)
+        return self._generation_client
+
+    def _get_embedding_client(self) -> _HTTPProviderClient:
+        if self._embedding_client is None:
+            self._embedding_client = _HTTPProviderClient(**self._embedding_config)
+        return self._embedding_client
+
+    def chat_completions(
+        self,
+        model: str,
+        messages: list,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[int] = None,
+        response_format: Optional[dict] = None,
+        reasoning_effort: Optional[str] = None,
+    ) -> dict:
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+        if response_format is not None:
+            payload["response_format"] = response_format
+        resolved_reasoning_effort = reasoning_effort
+        if resolved_reasoning_effort is None:
+            resolved_reasoning_effort = get_generation_reasoning_effort()
+        if resolved_reasoning_effort:
+            payload["reasoning_effort"] = resolved_reasoning_effort
+
+        log.debug("generation chat_completions model=%s messages_count=%d", model, len(messages))
+        return self._get_generation_client().post_json(
+            "/chat/completions",
+            payload,
+            max_retries=max_retries,
+        )
+
+    def embeddings(self, model: str, input) -> dict:
+        payload = {"model": model, "input": input}
+        log.debug(
+            "embedding provider embeddings model=%s input_type=%s",
+            model,
+            type(input).__name__,
+        )
+        return self._get_embedding_client().post_json("/v1/embeddings", payload)
 
 
-def get_client() -> WrapperClient:
+_client: Optional[AIClient] = None
+_client_signature: Optional[tuple] = None
+
+
+def get_generation_model() -> str:
+    model = str(current_app.config.get("OLLAMA_MODEL") or "").strip()
+    return model or DEFAULT_OLLAMA_MODEL
+
+
+def get_generation_fallback_model() -> Optional[str]:
+    fallback = str(current_app.config.get("OLLAMA_FALLBACK_MODEL") or "").strip()
+    if not fallback or fallback == get_generation_model():
+        return None
+    return fallback
+
+
+def get_generation_reasoning_effort() -> str:
+    effort = str(current_app.config.get("OLLAMA_REASONING_EFFORT") or "").strip().lower()
+    return effort or DEFAULT_OLLAMA_REASONING_EFFORT
+
+
+def get_embedding_model() -> str:
+    model = str(current_app.config.get("WRAPPER_EMBEDDING_MODEL") or "").strip()
+    return model or DEFAULT_WRAPPER_EMBEDDING_MODEL
+
+
+def get_client() -> AIClient:
     """
-    Return the module-level WrapperClient singleton.
+    Return the module-level AI gateway singleton.
 
-    Initialises on first call using current Flask app config:
+    Generation config:
+        OLLAMA_BASE_URL
+        OLLAMA_API_KEY      (optional for local Ollama)
+        OLLAMA_TIMEOUT      (default 120)
+        OLLAMA_MAX_RETRIES  (default 1)
+        OLLAMA_BASE_DELAY   (default 0.5)
+
+    Embedding config:
         WRAPPER_BASE_URL
         WRAPPER_KEY
         WRAPPER_TIMEOUT      (default 30)
@@ -213,14 +248,45 @@ def get_client() -> WrapperClient:
 
     Must be called inside a Flask application context.
     """
-    global _client
-    if _client is None:
-        cfg = current_app.config
-        _client = WrapperClient(
-            base_url=cfg["WRAPPER_BASE_URL"],
-            key=cfg["WRAPPER_KEY"],
-            timeout=int(cfg.get("WRAPPER_TIMEOUT", 30)),
-            max_retries=int(cfg.get("WRAPPER_MAX_RETRIES", 3)),
-            base_delay=float(cfg.get("WRAPPER_BASE_DELAY", 1.0)),
+    global _client, _client_signature
+
+    cfg = current_app.config
+    signature = (
+        cfg.get("OLLAMA_BASE_URL"),
+        cfg.get("OLLAMA_API_KEY"),
+        int(cfg.get("OLLAMA_TIMEOUT", 120)),
+        int(cfg.get("OLLAMA_MAX_RETRIES", 1)),
+        float(cfg.get("OLLAMA_BASE_DELAY", 0.5)),
+        cfg.get("WRAPPER_BASE_URL"),
+        cfg.get("WRAPPER_KEY"),
+        int(cfg.get("WRAPPER_TIMEOUT", 30)),
+        int(cfg.get("WRAPPER_MAX_RETRIES", 3)),
+        float(cfg.get("WRAPPER_BASE_DELAY", 1.0)),
+    )
+
+    if _client is None or _client_signature != signature:
+        _client = AIClient(
+            generation_config={
+                "provider_name": "Ollama",
+                "base_url": cfg.get("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_BASE_URL,
+                "key": cfg.get("OLLAMA_API_KEY") or DEFAULT_OLLAMA_API_KEY,
+                "timeout": int(cfg.get("OLLAMA_TIMEOUT", 120)),
+                "max_retries": int(cfg.get("OLLAMA_MAX_RETRIES", 1)),
+                "base_delay": float(cfg.get("OLLAMA_BASE_DELAY", 0.5)),
+                "require_key": False,
+                "key_name": "OLLAMA_API_KEY",
+            },
+            embedding_config={
+                "provider_name": "embedding wrapper",
+                "base_url": cfg.get("WRAPPER_BASE_URL", ""),
+                "key": cfg.get("WRAPPER_KEY", ""),
+                "timeout": int(cfg.get("WRAPPER_TIMEOUT", 30)),
+                "max_retries": int(cfg.get("WRAPPER_MAX_RETRIES", 3)),
+                "base_delay": float(cfg.get("WRAPPER_BASE_DELAY", 1.0)),
+                "require_key": True,
+                "key_name": "WRAPPER_KEY",
+            },
         )
+        _client_signature = signature
+
     return _client

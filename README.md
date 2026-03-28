@@ -36,9 +36,10 @@ Flask Backend API
   - quiz routes
   - rag, router, quiz, wrapper services
         |
-        | wrapper client
-        v
-AI Wrapper Service
+        | AI gateway client
+        +--> Ollama for generation
+        |
+        +--> Wrapper service for Gemini embeddings
 
 Flask Backend <-> PostgreSQL + pgvector
 ```
@@ -93,7 +94,8 @@ docs/                   # persistent project memory for future agents
 
 - Python 3.10+
 - PostgreSQL database with `pgvector`
-- wrapper base URL and wrapper key
+- wrapper base URL and wrapper key for embeddings
+- Ollama running locally for generation
 
 ### Environment
 
@@ -105,6 +107,10 @@ Backend vars:
 - `JWT_SECRET_KEY`
 - `WRAPPER_BASE_URL`
 - `WRAPPER_KEY`
+- `WRAPPER_EMBEDDING_MODEL`
+- `OLLAMA_BASE_URL`
+- `OLLAMA_API_KEY`
+- `OLLAMA_MODEL`
 - `CORS_ALLOWED_ORIGINS`
 
 Frontend config:
@@ -187,6 +193,8 @@ Implemented tables:
 ## 9) Key Implementation Notes
 
 - All AI traffic goes through `backend/app/services/wrapper/client.py`.
+- Chat, quiz generation, and quiz summaries use Ollama.
+- Document ingestion and retrieval embeddings stay on the wrapper.
 - Retrieval is always user-scoped and limited to each document's `current_ingestion_id`.
 - Chat sessions can be pinned to selected documents only.
 - Quiz generation can use all ready documents or selected `document_ids`.

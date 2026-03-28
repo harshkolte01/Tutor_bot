@@ -22,12 +22,11 @@ from app.db.models.chunk import Chunk
 from app.db.models.document import Document
 from app.db.models.document_ingestion import DocumentIngestion
 from app.services.rag.chunking import TextChunk, chunk_pages, chunk_plain_text
-from app.services.wrapper.client import WrapperError, get_client
+from app.services.wrapper.client import WrapperError, get_client, get_embedding_model
 
 log = logging.getLogger(__name__)
 
 EMBED_BATCH_SIZE = 100
-EMBEDDING_MODEL = "gemini/gemini-embedding-001"
 
 
 # ── PDF text extraction ───────────────────────────────────────────────────────
@@ -64,7 +63,7 @@ def _embed_chunks(chunks: List[TextChunk]) -> List[List[float]]:
         batch = chunks[batch_start : batch_start + EMBED_BATCH_SIZE]
         texts = [c.content for c in batch]
 
-        response = client.embeddings(model=EMBEDDING_MODEL, input=texts)
+        response = client.embeddings(model=get_embedding_model(), input=texts)
         # OpenAI-style: {"data": [{"index": N, "embedding": [...]}, ...]}
         data = response.get("data", [])
         # Sort by index to guarantee order

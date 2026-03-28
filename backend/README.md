@@ -9,7 +9,8 @@ The backend provides:
 - document ingestion and vector retrieval for RAG
 - chat session and message APIs with citations
 - quiz generation, quiz attempts, grading, and result summaries
-- wrapper-mediated AI calls for chat, embeddings, quiz generation, and quiz summaries
+- Ollama-mediated generation for chat, quiz generation, and quiz summaries
+- wrapper-mediated Gemini embeddings for ingestion and retrieval
 
 ## 2) Application Bootstrap
 
@@ -37,7 +38,11 @@ Entry points:
 - `JWT_SECRET_KEY`
 - `WRAPPER_BASE_URL`
 - `WRAPPER_KEY`
-- wrapper timeout and retry settings
+- `WRAPPER_EMBEDDING_MODEL`
+- `OLLAMA_BASE_URL`
+- `OLLAMA_API_KEY`
+- `OLLAMA_MODEL`
+- provider timeout and retry settings
 - `UPLOAD_FOLDER`
 - `CORS_ALLOWED_ORIGINS`
 
@@ -85,17 +90,19 @@ Scope isolation:
 - all protected APIs enforce `user_id` ownership
 - retrieval and quiz creation remain user-scoped
 
-## 6) Wrapper Client Layer
+## 6) AI Client Layer
 
 Files:
 - `app/services/wrapper/client.py`
 - `app/services/wrapper/retry.py`
 
 Implemented rules:
-- backend AI calls only through wrapper endpoints
-  - `POST /v1/chat/completions`
+- backend AI calls only through `app/services/wrapper/client.py`
+- chat and quiz generation use Ollama OpenAI-compatible chat completions
+  - `POST /v1/chat/completions` via `OLLAMA_BASE_URL`
+- embeddings stay on the wrapper
   - `POST /v1/embeddings`
-- bearer auth with `WRAPPER_KEY`
+- bearer auth with `WRAPPER_KEY` for embedding calls
 - retry on `429`, `502`, `503`, `504`
 - timeout and error normalization through `WrapperError`
 - singleton access through `get_client()`
@@ -168,7 +175,7 @@ Quiz creation behavior:
 - parses and validates topic, counts, marks, difficulty, time limit, and optional `document_ids`
 - validates ownership and readiness of selected documents
 - retrieves context from the user's latest ready ingestions
-- generates structured quiz JSON through the wrapper client
+- generates structured quiz JSON through the AI gateway
 - validates question schema, citations, marks, and answer references
 - stores quizzes, questions, and question-source citations
 - hides answer keys on quiz fetch endpoints
@@ -191,7 +198,7 @@ Quiz service files:
 
 `GET /api/dev/wrapper-smoke`:
 - JWT-protected
-- runs one chat call and one embedding call through the wrapper
+- runs one Ollama chat call and one wrapper embedding call
 
 ## 11) Error Handling
 
@@ -201,7 +208,7 @@ Common API patterns:
 - `404` for missing scoped resources
 - `409` for conflicting state such as resubmitting an attempt
 - `413` and `415` for invalid document uploads
-- `503` for wrapper availability problems in AI-backed flows
+- `503` for AI provider availability problems in AI-backed flows
 
 ## 12) Current Constraints
 

@@ -31,11 +31,10 @@ from typing import List
 from app.db.models.chunk import Chunk
 from app.db.models.document import Document
 from app.extensions import db
-from app.services.wrapper.client import WrapperError, get_client
+from app.services.wrapper.client import WrapperError, get_client, get_embedding_model
 
 log = logging.getLogger(__name__)
 
-EMBEDDING_MODEL = "gemini/gemini-embedding-001"
 _EMBED_DIM = 1536  # Must match the Vector(1536) column on Chunk.embedding
 _MAX_DIVERSIFIED_CANDIDATES = 48
 
@@ -51,7 +50,7 @@ def _embed_query(query_text: str) -> List[float]:
     Raises WrapperError on any embedding failure.
     """
     client = get_client()
-    response = client.embeddings(model=EMBEDDING_MODEL, input=query_text)
+    response = client.embeddings(model=get_embedding_model(), input=query_text)
 
     data = response.get("data", [])
     if not data:

@@ -6,19 +6,16 @@ import re
 from typing import Any
 
 from app.db.models.quiz import Quiz
-from app.services.wrapper.client import WrapperError, get_client
+from app.services.wrapper.client import WrapperError, get_client, get_generation_model
 
 log = logging.getLogger(__name__)
-
-SUMMARY_MODEL = "gemini/gemini-2.5-flash"
-
 
 def summarize_attempt(quiz: Quiz, grading_result: dict[str, Any]) -> dict[str, Any]:
     fallback_summary = _build_fallback_summary(quiz=quiz, grading_result=grading_result)
 
     try:
         response = get_client().chat_completions(
-            model=SUMMARY_MODEL,
+            model=get_generation_model(),
             messages=_build_messages(quiz=quiz, grading_result=grading_result),
             temperature=0.2,
             max_tokens=800,

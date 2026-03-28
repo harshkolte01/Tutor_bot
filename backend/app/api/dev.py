@@ -1,18 +1,23 @@
 """
-Dev-only internal smoke endpoint for verifying wrapper client connectivity.
+Dev-only internal smoke endpoint for verifying AI provider connectivity.
 
 Endpoint:  GET /api/dev/wrapper-smoke
 Auth:      JWT required (prevents accidental public exposure)
-Purpose:   Tests one chat call and one embedding call through the wrapper.
+Purpose:   Tests one Ollama chat call and one wrapper embedding call.
 
 This blueprint is only relevant in development. In production it can be left
 registered (it is JWT-gated) or excluded via config if preferred.
 """
 
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 
-from app.services.wrapper.client import get_client, WrapperError
+from app.services.wrapper.client import (
+    WrapperError,
+    get_client,
+    get_embedding_model,
+    get_generation_model,
+)
 
 dev_bp = Blueprint("dev", __name__, url_prefix="/api/dev")
 
@@ -30,9 +35,7 @@ def wrapper_smoke():
     try:
         client = get_client()
         chat_resp = client.chat_completions(
-            model=current_app.config.get(
-                "WRAPPER_DEFAULT_MODEL", "routeway/glm-4.5-air:free"
-            ),
+            model=get_generation_model(),
             messages=[{"role": "user", "content": "Reply with exactly: OK"}],
             max_tokens=8,
         )
@@ -52,12 +55,7 @@ def wrapper_smoke():
     # ── Embedding smoke ──────────────────────────────────────────────────────
     try:
         client = get_client()
-        emb_resp = client.embeddings(
-            model=current_app.config.get(
-                "WRAPPER_EMBEDDING_MODEL", "gemini/gemini-embedding-001"
-            ),
-            input="hello world",
-        )
+        emb_resp = client.embeddings(model=get_embedding_model(), input="hello world")
         data = emb_resp.get("data", [{}])
         vector = data[0].get("embedding", []) if data else []
         results["embedding"] = {

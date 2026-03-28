@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from flask import current_app
-
 from app.db.models.document import Document
 from app.db.models.quiz import Quiz
 from app.db.models.quiz_question import QuizQuestion
@@ -18,12 +16,15 @@ from app.services.quiz.validator import (
     validate_quiz_payload,
 )
 from app.services.rag.retrieval import retrieve_chunks, retrieve_chunks_diversified
-from app.services.wrapper.client import WrapperError, get_client
+from app.services.wrapper.client import (
+    WrapperError,
+    get_client,
+    get_generation_fallback_model,
+    get_generation_model,
+)
 
 log = logging.getLogger(__name__)
 
-PRIMARY_MODEL = "openrouter/google/gemma-3-27b-it:free"
-FALLBACK_MODEL = "gemini/gemini-2.5-flash"
 MAX_VALIDATION_ATTEMPTS = 3
 MAX_SOURCE_DOCUMENT_COVERAGE = 3
 
@@ -190,10 +191,11 @@ def _generate_valid_payload(
 
 def _chat_with_fallback(messages: list[dict[str, str]]) -> tuple[str, str]:
     client = get_client()
-    primary_model = current_app.config.get("WRAPPER_DEFAULT_MODEL", PRIMARY_MODEL) or PRIMARY_MODEL
+    primary_model = get_generation_model()
     model_chain = [primary_model]
-    if FALLBACK_MODEL not in model_chain:
-        model_chain.append(FALLBACK_MODEL)
+    fallback_model = get_generation_fallback_model()
+    if fallback_model and fallback_model not in model_chain:
+        model_chain.append(fallback_model)
 
     last_exc = None
     for index, model in enumerate(model_chain):
