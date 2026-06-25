@@ -34,6 +34,10 @@
         <span class="brand-name">Tutor Bot</span>
       </a>
       <div class="topbar-actions">
+        <div class="ai-connection" data-ai-status data-ai-state="connecting" aria-live="polite">
+          <span class="ai-connection-dot" aria-hidden="true"></span>
+          <span data-ai-status-label>Connecting to AI agent</span>
+        </div>
         <a class="button button-ghost" href="./signup.html">Create Account</a>
       </div>
     </div>
@@ -74,6 +78,7 @@
     </section>
   </main>
 
+  <script type="module" src="../assets/js/ai_status.js"></script>
   <script type="module" src="../assets/js/auth.js"></script>
 </body>
 </html>

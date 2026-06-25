@@ -21,6 +21,10 @@ class Config:
     WRAPPER_TIMEOUT = int(os.getenv("WRAPPER_TIMEOUT", "30"))      # seconds
     WRAPPER_MAX_RETRIES = int(os.getenv("WRAPPER_MAX_RETRIES", "3"))
     WRAPPER_BASE_DELAY = float(os.getenv("WRAPPER_BASE_DELAY", "1.0"))  # seconds
+    WRAPPER_STATUS_CACHE_SECONDS = int(os.getenv("WRAPPER_STATUS_CACHE_SECONDS", "120"))
+    WRAPPER_STATUS_RETRY_SECONDS = int(os.getenv("WRAPPER_STATUS_RETRY_SECONDS", "10"))
+    WRAPPER_STATUS_TIMEOUT = float(os.getenv("WRAPPER_STATUS_TIMEOUT", "45"))
+    WRAPPER_STATUS_PATH = os.getenv("WRAPPER_STATUS_PATH", "/")
     # Default model routing (services can override per call)
     WRAPPER_DEFAULT_MODEL = os.getenv("WRAPPER_DEFAULT_MODEL", "openrouter/google/gemma-3-27b-it:free")
     WRAPPER_EMBEDDING_MODEL = os.getenv("WRAPPER_EMBEDDING_MODEL", "gemini/gemini-embedding-001")

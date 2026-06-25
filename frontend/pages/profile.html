@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profile | Tutor Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <script src="../config.js"></script>
+</head>
+<body class="app-page">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="10" fill="url(#brand-grad-profile)"/>
+            <path d="M10 20l4-5 4 3 4-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="20" r="1.8" fill="#fff"/>
+            <circle cx="14" cy="15" r="1.8" fill="#fff"/>
+            <circle cx="18" cy="18" r="1.8" fill="#fff"/>
+            <circle cx="22" cy="11" r="1.8" fill="#fff"/>
+            <defs>
+              <linearGradient id="brand-grad-profile" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#095850"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <span class="brand-name">Tutor Bot</span>
+      </a>
+      <div class="topbar-actions">
+        <div class="ai-connection" data-ai-status data-ai-state="connecting" aria-live="polite">
+          <span class="ai-connection-dot" aria-hidden="true"></span>
+          <span data-ai-status-label>Connecting to AI agent</span>
+        </div>
+        <div class="nav-user">
+          <a class="user-avatar user-avatar-link" href="./profile.html" data-user-slot aria-label="Open profile"></a>
+          <button class="button button-danger" type="button" data-signout>Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="subnav">
+    <div class="container subnav-inner">
+      <a class="subnav-link" href="./documents.html">Documents</a>
+      <a class="subnav-link" href="./chat.html">Chat</a>
+      <a class="subnav-link" href="./create-quiz.html">Create Quiz</a>
+      <a class="subnav-link" href="./take-quiz.html">Take Quiz</a>
+      <a class="subnav-link" href="./analytics.html">Analytics</a>
+    </div>
+  </nav>
+
+  <main class="container profile-page">
+    <div class="page-header">
+      <h1>Profile</h1>
+      <p>View your account details and update your password.</p>
+    </div>
+
+    <div class="profile-grid">
+      <section class="card profile-summary-card">
+        <div class="profile-summary-head">
+          <div class="profile-avatar-large" data-profile-avatar></div>
+          <div class="profile-summary-copy">
+            <h2 data-profile-display-name>Loading...</h2>
+            <p data-profile-email>Loading account...</p>
+          </div>
+        </div>
+
+        <dl class="profile-detail-list">
+          <div>
+            <dt>User Name</dt>
+            <dd data-profile-username>Loading...</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd data-profile-email-detail>Loading...</dd>
+          </div>
+        </dl>
+
+        <p class="status-line" id="profile-status"></p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Update Password</h2>
+        <p class="card-desc">Enter your old password and choose a new password.</p>
+
+        <form id="password-form" novalidate>
+          <div class="field">
+            <label for="current-password">Old Password</label>
+            <input id="current-password" name="current_password" type="password" autocomplete="current-password" required>
+          </div>
+
+          <div class="field">
+            <label for="new-password">New Password</label>
+            <input id="new-password" name="new_password" type="password" autocomplete="new-password" minlength="8" required>
+          </div>
+
+          <div class="profile-form-actions">
+            <button class="button button-solid" id="password-submit" type="submit">Update Password</button>
+            <span class="status-line" id="password-status"></span>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="../assets/js/ai_status.js"></script>
+  <script type="module" src="../assets/js/profile.js"></script>
+</body>
+</html>

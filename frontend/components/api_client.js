@@ -174,6 +174,24 @@ export function getMe(accessToken) {
   });
 }
 
+export function getAiStatus() {
+  return request("/api/ai/status", {
+    method: "GET",
+    timeoutMs: 60000,
+  });
+}
+
+export function changePassword(accessToken, currentPassword, newPassword) {
+  return request("/api/auth/password", {
+    method: "POST",
+    token: accessToken,
+    payload: {
+      current_password: currentPassword,
+      new_password: newPassword,
+    },
+  });
+}
+
 export function authedGet(path, accessToken, params = null) {
   return request(path, {
     method: "GET",

@@ -42,12 +42,16 @@
       </nav>
 
       <div class="topbar-actions">
+        <div class="ai-connection" data-ai-status data-ai-state="connecting" aria-live="polite">
+          <span class="ai-connection-dot" aria-hidden="true"></span>
+          <span data-ai-status-label>Connecting to AI agent</span>
+        </div>
         <!-- guest links -->
         <a class="button button-ghost" href="./pages/login.html" data-guest-action="signin">Log In</a>
         <a class="button button-solid" href="./pages/signup.html" data-guest-action="signup">Get Started</a>
         <!-- auth links -->
         <div class="nav-user" data-authed-action hidden>
-          <span class="user-avatar" data-user-slot></span>
+          <a class="user-avatar user-avatar-link" href="./pages/profile.html" data-user-slot aria-label="Open profile"></a>
           <button class="button button-danger" type="button" data-signout>Sign Out</button>
         </div>
       </div>
@@ -258,6 +262,7 @@
     <p>© 2026 Tutor Bot. All rights reserved. Developed with ❤️ for students by BHOOMI JAIN.</p>
   </footer>
 
+  <script type="module" src="./assets/js/ai_status.js"></script>
   <script type="module" src="./assets/js/landing.js"></script>
 </body>
 </html>

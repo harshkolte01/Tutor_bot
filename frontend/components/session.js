@@ -27,6 +27,16 @@ export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
+export function updateSessionUser(user) {
+  const session = getSession();
+  if (!session) {
+    return null;
+  }
+  session.user = user;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return session;
+}
+
 export function getAccessToken() {
   const session = getSession();
   return session?.accessToken || null;

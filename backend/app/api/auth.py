@@ -106,7 +106,37 @@ def me():
     return jsonify({"user": _user_dict(user)}), 200
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Password
+
+@auth_bp.post("/password")
+@jwt_required()
+def change_password():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get("current_password") or data.get("old_password") or ""
+    new_password = data.get("new_password") or ""
+
+    if not current_password or not new_password:
+        return jsonify({"error": "old password and new password are required"}), 400
+    if len(new_password) < 8:
+        return jsonify({"error": "new password must be at least 8 characters"}), 400
+
+    user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "account is disabled"}), 403
+    if not user.check_password(current_password):
+        return jsonify({"error": "old password is incorrect"}), 401
+    if user.check_password(new_password):
+        return jsonify({"error": "new password must be different from old password"}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+    return jsonify({"message": "Password updated"}), 200
+
+
+# Helpers
 
 def _user_dict(user: User) -> dict:
     return {

@@ -37,8 +37,12 @@
         <span class="brand-name">Tutor Bot</span>
       </a>
       <div class="topbar-actions">
+        <div class="ai-connection" data-ai-status data-ai-state="connecting" aria-live="polite">
+          <span class="ai-connection-dot" aria-hidden="true"></span>
+          <span data-ai-status-label>Connecting to AI agent</span>
+        </div>
         <div class="nav-user">
-          <span class="user-avatar" data-user-slot></span>
+          <a class="user-avatar user-avatar-link" href="./profile.html" data-user-slot aria-label="Open profile"></a>
           <button class="button button-danger" type="button" data-signout>Sign Out</button>
         </div>
       </div>
@@ -129,6 +133,7 @@
     </div>
   </div>
 
+  <script type="module" src="../assets/js/ai_status.js"></script>
   <script type="module" src="../assets/js/chat.js"></script>
 </body>
 </html>
